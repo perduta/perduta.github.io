@@ -29,7 +29,7 @@ const tocHeadings = headings.filter((h) => h.depth === 2);
 	title={`${post.data.title} — Field Notes`}
 	description={post.data.description}
 	heading={post.data.title}
-	deck={post.data.deck}
+	deck={post.data.description}
 	byline={{ date: dateStr, topic: post.data.topic }}
 	hasToc={tocHeadings.length > 0}
 >

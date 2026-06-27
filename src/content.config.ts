@@ -8,7 +8,6 @@ const posts = defineCollection({
     description: z.string(),
     date: z.coerce.date(),
     topic: z.string(),
-    deck: z.string(),
   }),
 });
 
