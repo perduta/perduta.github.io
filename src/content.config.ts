@@ -7,14 +7,8 @@ const posts = defineCollection({
     title: z.string(),
     description: z.string(),
     date: z.coerce.date(),
-    author: z.string().default('Patryk Perduta'),
-    kicker: z.string(),
-    fieldNote: z.number(),
     topic: z.string(),
-    status: z.enum(['published', 'draft']).default('published'),
-    signal: z.string(),
     deck: z.string(),
-    tags: z.array(z.string()).default([]),
   }),
 });
 
