@@ -46,21 +46,6 @@ const tocHeadings = headings.filter((h) => h.depth === 2);
 
 	<div class="prose"><Content /></div>
 
-	<div class="tags">
-		{post.data.tags.map((tag: string) => (
-			<a href={`/posts/${post.id}/`}>{tag}</a>
-		))}
-	</div>
-
-	<div class="bio">
-		<div class="avatar" aria-hidden="true">PP</div>
-		<div>
-			<p class="b-name">{post.data.author}</p>
-			<p>Software developer writing field notes about code, systems, and tools that keep working after the laptop closes.</p>
-			<div class="links"><a href="https://github.com/perduta">github</a></div>
-		</div>
-	</div>
-
 	<nav class="pager" aria-label="Posts">
 		{prevPost ? (
 			<a class="prev" href={`/posts/${prevPost.id}/`}>
