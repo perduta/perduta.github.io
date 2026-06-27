@@ -3,8 +3,6 @@ import Layout from './Layout.astro';
 
 interface Byline {
 	date: string;
-	readTime?: string;
-	readTimeId?: string;
 }
 
 interface Props {
@@ -28,8 +26,6 @@ const { title, description, heading, deck, byline, contentClass } = Astro.props;
 				{byline && (
 					<div class="byline">
 						<time datetime={byline.date}>{byline.date}</time>
-						{byline.readTime && <span class="dot">/</span>}
-						{byline.readTime && <span id={byline.readTimeId}>{byline.readTime}</span>}
 					</div>
 				)}
 			</header>

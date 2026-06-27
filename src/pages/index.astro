@@ -22,8 +22,6 @@ const latest = posts[0];
 					<span>{latest.data.date.toISOString().slice(0, 10)}</span>
 					<span class="dot">/</span>
 					<span>{latest.data.topic}</span>
-					<span class="dot">/</span>
-					<span id="readtime-feat">2 min</span>
 				</div>
 			</div>
 			<a class="article-preview" href={`/posts/${latest.id}/`} aria-label={`Read ${latest.data.title}`}>
@@ -49,7 +47,6 @@ const latest = posts[0];
 						<h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
 						<p class="ex">{post.data.description}</p>
 					</div>
-					<div class="rt">2 min</div>
 				</li>
 			);
 		})}

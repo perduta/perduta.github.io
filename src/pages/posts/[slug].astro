@@ -30,7 +30,7 @@ const tocHeadings = headings.filter((h) => h.depth === 2);
 	description={post.data.description}
 	heading={post.data.title}
 	deck={post.data.deck}
-	byline={{ date: dateStr, readTime: '2 min read', readTimeId: 'readtime' }}
+	byline={{ date: dateStr }}
 >
 	{tocHeadings.length > 0 && (
 		<nav class="toc" aria-label="Contents">
@@ -43,7 +43,7 @@ const tocHeadings = headings.filter((h) => h.depth === 2);
 		</nav>
 	)}
 
-	<Content />
+	<div class="prose"><Content /></div>
 
 	<div class="tags">
 		{post.data.tags.map((tag: string) => (

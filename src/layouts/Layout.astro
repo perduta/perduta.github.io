@@ -100,13 +100,6 @@ const { title, description } = Astro.props;
 				updateProgress();
 			}
 
-			const readTime = document.querySelector<HTMLElement>('#readtime');
-			const article = document.querySelector<HTMLElement>('article');
-			if (readTime && article) {
-				const words = article.innerText.trim().split(/\s+/).length;
-				readTime.textContent = `${Math.max(1, Math.round(words / 220))} min read`;
-			}
-
 			document.querySelectorAll<HTMLElement>('figure.code').forEach((figure) => {
 				const button = figure.querySelector<HTMLButtonElement>('.copy');
 				const pre = figure.querySelector<HTMLElement>('pre');
