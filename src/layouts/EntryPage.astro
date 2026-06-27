@@ -3,6 +3,7 @@ import Layout from './Layout.astro';
 
 interface Byline {
 	date: string;
+	topic?: string;
 }
 
 interface Props {
@@ -23,8 +24,13 @@ const { title, description, heading, deck, byline, contentClass, hasToc } = Astr
 		<article>
 			<header class="entry col">
 				{byline && (
-					<div class="byline">
-						<time datetime={byline.date}>{byline.date}</time>
+					<div class="kicker">
+						<nav class="crumb" aria-label="Breadcrumb">
+							<a href="/">writing</a>
+							{byline.topic && <span class="sep">/</span>}
+							{byline.topic && <span class="cur">{byline.topic}</span>}
+						</nav>
+						<div class="byline">written on <time datetime={byline.date}>{byline.date}</time></div>
 					</div>
 				)}
 				<h1 class="title">{heading}</h1>

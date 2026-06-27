@@ -1,0 +1,30 @@
+---
+import EntryPage from '../layouts/EntryPage.astro';
+
+const description = 'About Patryk Perduta — software developer moving into AI safety research.';
+const deck = 'Software developer writing field notes about code, systems, and the tools that keep working after the laptop closes.';
+---
+
+<EntryPage
+	title="About — Field Notes"
+	description={description}
+	heading="About"
+	deck={deck}
+	contentClass="page-end"
+>
+	<div class="prose">
+		<p>
+			I'm Patryk Perduta. I've spent roughly a decade building backend systems, trained a
+			handful of deep-learning models along the way, and I'm now moving full time into AI safety
+			research.
+		</p>
+		<p>
+			This site is where I keep field notes: experiment write-ups, puzzles, and the small details
+			worth remembering. Less polish, more thinking out loud.
+		</p>
+		<p>
+			Elsewhere on the web: <a href="https://github.com/perduta">GitHub</a> ·
+			<a href="https://www.linkedin.com/in/perduta/">LinkedIn</a>.
+		</p>
+	</div>
+</EntryPage>

@@ -26,11 +26,11 @@ const tocHeadings = headings.filter((h) => h.depth === 2);
 ---
 
 <EntryPage
-	title={`${post.data.title} — patryk.perduta`}
+	title={`${post.data.title} — Field Notes`}
 	description={post.data.description}
 	heading={post.data.title}
 	deck={post.data.deck}
-	byline={{ date: dateStr }}
+	byline={{ date: dateStr, topic: post.data.topic }}
 	hasToc={tocHeadings.length > 0}
 >
 	{tocHeadings.length > 0 && (

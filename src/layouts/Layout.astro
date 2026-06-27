@@ -7,6 +7,10 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+
+const path = Astro.url.pathname;
+const onWriting = path === '/' || path.startsWith('/posts');
+const onAbout = path.startsWith('/about');
 ---
 
 <!doctype html>
@@ -43,11 +47,14 @@ const { title, description } = Astro.props;
 			<div class="site-inner">
 				<a class="brand" href="/">
 					<span class="mark" aria-hidden="true"></span>
-					<span class="btxt">patryk.perduta</span>
+					<span class="btxt">
+						<span class="bname">Field Notes</span>
+						<span class="bsub">by Patryk Perduta</span>
+					</span>
 				</a>
 				<nav class="nav" aria-label="Site">
-					<a href="/" aria-current="page">writing</a>
-					<a href="https://github.com/perduta">github</a>
+					<a href="/" aria-current={onWriting ? 'page' : undefined}>writing</a>
+					<a href="/about/" aria-current={onAbout ? 'page' : undefined}>about</a>
 				</nav>
 				<button class="toggle" id="theme" type="button" aria-label="Toggle dark mode">
 					<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8L6 18M18 6l1.8-1.8"></path></svg>

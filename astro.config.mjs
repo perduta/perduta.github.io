@@ -4,7 +4,7 @@ import mdx from '@astrojs/mdx';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://perduta.github.io',
+  site: 'https://blog.perduta.net',
   integrations: [mdx()],
   markdown: {
     shikiConfig: {
