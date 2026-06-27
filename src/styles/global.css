@@ -48,10 +48,10 @@ body{
   background-color:var(--bg);
   background-image:
     linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
-    linear-gradient(var(--grid-bold) 1.5px, transparent 1.5px),
-    linear-gradient(90deg, var(--grid-bold) 1.5px, transparent 1.5px);
-  background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px, 24px 24px;
+  /* centre horizontally so the cut cells match on both edges; full row at the top */
+  background-position: center top;
   transition:background-color .35s,color .35s;
 }
 ::selection{ background:var(--accent-soft); }
@@ -59,7 +59,7 @@ body{
 .progress{ position:fixed; top:0; left:0; height:2px; width:0%; background:var(--accent); z-index:60; }
 
 .site{ position:sticky; top:0; z-index:50; background:color-mix(in oklch,var(--bg) 88%,transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--rule); }
-.site-inner{ max-width:1060px; margin:0 auto; padding:12px 40px; display:flex; align-items:center; gap:20px; font-family:var(--mono); }
+.site-inner{ max-width:1060px; margin:0 auto; padding:12px 40px; min-height:71px; display:flex; align-items:center; gap:20px; font-family:var(--mono); }
 .brand{ color:var(--text); text-decoration:none; display:flex; align-items:center; gap:10px; }
 .btxt{ display:flex; flex-direction:column; }
 .bname{ font-family:var(--serif); font-weight:600; font-size:18px; line-height:1.1; letter-spacing:-0.01em; }
@@ -76,14 +76,14 @@ body{
 
 .post{ max-width:1060px; margin:0 auto; padding:0 40px; }
 .col{ max-width:var(--col); margin-left:auto; margin-right:auto; position:relative; }
-.col::before{ content:""; position:absolute; left:-26px; top:-6px; bottom:-6px; width:0; border-left:1px solid var(--margin-line); opacity:.55; }
+.col::before{ content:""; position:absolute; left:-30px; top:-6px; bottom:-6px; width:0; border-left:1px solid var(--margin-line); opacity:.55; }
 /* header and content each draw the line; meet them seamlessly so they don't overlap and look thicker at the junction */
 .entry.col::before{ bottom:0; }
 .col:not(.entry)::before{ top:0; }
 @media (max-width:1080px){ .col::before{ display:none; } }
 
 /* notebook masthead */
-header.entry{ padding:64px 0 32px; }
+header.entry{ padding:32px 0 32px; }
 h1.title{ font-family:var(--serif); font-weight:600; font-size:clamp(34px,5vw,48px); line-height:1.05; letter-spacing:-0.02em; margin:0 0 20px; text-wrap:balance; }
 .deck{ font-size:21px; line-height:1.5; color:var(--muted); margin:0 0 30px; text-wrap:pretty; }
 .kicker{ margin:0 0 18px; display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 24px; }
@@ -145,7 +145,7 @@ td.num,th.num{ text-align:right; }
   .nav{ gap:0; }
   .nav a{ padding:11px 9px; font-size:12px; }
   .toggle{ width:36px; height:36px; margin-left:4px; }
-  header.entry{ padding-top:48px; }
+  header.entry{ padding-top:24px; }
   .pager{ grid-template-columns:1fr; } .pager .prev{ padding-right:0; } .pager .next{ text-align:left; padding-left:0; }
 }
 
