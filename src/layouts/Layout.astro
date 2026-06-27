@@ -120,7 +120,7 @@ const { title, description } = Astro.props;
 			if (tocLinks.length && sections.length) {
 				const updateToc = () => {
 					const marker = window.scrollY + 120;
-					let current: string | null = null;
+					let current: string | null = sections[0].id;
 					sections.forEach((section) => {
 						if (section.offsetTop <= marker) current = section.id;
 					});

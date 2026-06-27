@@ -22,13 +22,13 @@ const { title, description, heading, deck, byline, contentClass, hasToc } = Astr
 	<main class:list={["post", { "has-toc": hasToc }]} id="top">
 		<article>
 			<header class="entry col">
-				<h1 class="title">{heading}</h1>
-				<p class="deck">{deck}</p>
 				{byline && (
 					<div class="byline">
 						<time datetime={byline.date}>{byline.date}</time>
 					</div>
 				)}
+				<h1 class="title">{heading}</h1>
+				<p class="deck">{deck}</p>
 			</header>
 
 			<div class:list={["col", contentClass]}>
