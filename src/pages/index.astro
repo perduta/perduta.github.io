@@ -86,41 +86,57 @@ const total = posts.length;
 
 		const c = resolvedAccent();
 		const rc = rough.svg(svg);
-		const shaft = { stroke: c, strokeWidth: 6.5, roughness: 1.6, bowing: 1, seed: 42, disableMultiStroke: false };
-
-		// hand-drawn shaft: sample a bowed quadratic, then jitter each point so the
-		// macro shape itself wobbles (not just the stroke) and draw a curve through them
+		// bowed quadratic from start to tip
 		const dx = tipX - startX, dy = tipY - startY;
 		const len = Math.hypot(dx, dy) || 1;
 		const px = -dy / len, py = dx / len; // unit perpendicular
 		const curve = -150; // bow out to the right before hooking into the entry
 		const c1x = startX + dx * 0.5 + px * curve;
 		const c1y = startY + dy * 0.5 + py * curve;
-		// seeded PRNG so the wobble is identical on every draw
-		let seed = 0x9e3779b9;
-		const rng = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-		const jit = (n) => (rng() * 2 - 1) * n;
-		const N = 14;
-		const pts = [];
+		const ang = Math.atan2(tipY - c1y, tipX - c1x); // tangent at the tip
+		const headLen = 68, spread = 0.5; // radians
+
+		// clean sampled points along the curve — rough.js supplies all the sketch
+		const N = 14, pts = [];
 		for (let i = 0; i <= N; i++) {
 			const t = i / N, mt = 1 - t;
-			const x = mt * mt * startX + 2 * mt * t * c1x + t * t * tipX;
-			const y = mt * mt * startY + 2 * mt * t * c1y + t * t * tipY;
-			const j = i === 0 || i === N ? 0 : 7; // keep the endpoints anchored
-			pts.push([x + jit(j), y + jit(j)]);
+			pts.push([
+				mt * mt * startX + 2 * mt * t * c1x + t * t * tipX,
+				mt * mt * startY + 2 * mt * t * c1y + t * t * tipY,
+			]);
 		}
-		svg.appendChild(rc.curve(pts, shaft));
 
-		// fat filled arrowhead, oriented along the curve's tangent at the tip
-		const ang = Math.atan2(tipY - c1y, tipX - c1x);
-		const hl = 46, hw = 28;
-		const bx = tipX - hl * Math.cos(ang);
-		const by = tipY - hl * Math.sin(ang);
-		const hpx = -Math.sin(ang) * hw, hpy = Math.cos(ang) * hw;
-		svg.appendChild(rc.polygon(
-			[[tipX, tipY], [bx + hpx, by + hpy], [bx - hpx, by - hpy]],
-			{ fill: c, fillStyle: 'solid', stroke: c, strokeWidth: 2, roughness: 2, seed: 42 },
-		));
+		// lay several thin strokes over each other for a sketched, multi-pass look
+		const PASSES = 3;
+		for (let p = 0; p < PASSES; p++) {
+			const o = { stroke: c, strokeWidth: 1.1, roughness: 1.4, bowing: 1, seed: 42 + p * 7 };
+			svg.appendChild(rc.curve(pts, o));
+			svg.appendChild(rc.line(tipX, tipY, tipX - headLen * Math.cos(ang - spread), tipY - headLen * Math.sin(ang - spread), o));
+			svg.appendChild(rc.line(tipX, tipY, tipX - headLen * Math.cos(ang + spread), tipY - headLen * Math.sin(ang + spread), o));
+		}
+
+		// "handwritten" label curving under the middle of the arrow
+		const NS = 'http://www.w3.org/2000/svg';
+		const pathId = 'arrow-label-path';
+		const labelPath = document.createElementNS(NS, 'path');
+		labelPath.setAttribute('id', pathId);
+		// run the path tip→start so the text reads left-to-right up the curve
+		labelPath.setAttribute('d', `M ${tipX} ${tipY} Q ${c1x} ${c1y} ${startX} ${startY}`);
+		labelPath.setAttribute('fill', 'none');
+		svg.appendChild(labelPath);
+
+		const text = document.createElementNS(NS, 'text');
+		text.setAttribute('fill', c);
+		text.setAttribute('dy', '32'); // sit the words under the line, with a small gap
+		Object.assign(text.style, { fontFamily: '"Caveat", cursive', fontSize: '34px', fontWeight: '700', letterSpacing: '4px' });
+		const textPath = document.createElementNS(NS, 'textPath');
+		textPath.setAttribute('href', `#${pathId}`);
+		textPath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`);
+		textPath.setAttribute('startOffset', '50%');
+		textPath.setAttribute('text-anchor', 'middle');
+		textPath.textContent = 'NEW POST';
+		text.appendChild(textPath);
+		svg.appendChild(text);
 
 		document.body.appendChild(svg);
 	}
