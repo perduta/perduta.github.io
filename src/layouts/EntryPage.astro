@@ -1,0 +1,42 @@
+---
+import Layout from './Layout.astro';
+
+interface Byline {
+	date: string;
+	readTime?: string;
+	readTimeId?: string;
+}
+
+interface Props {
+	title: string;
+	description: string;
+	heading: string;
+	deck: string;
+	byline?: Byline;
+	contentClass?: string;
+}
+
+const { title, description, heading, deck, byline, contentClass } = Astro.props;
+---
+
+<Layout title={title} description={description}>
+	<main class="post" id="top">
+		<article>
+			<header class="entry col">
+				<h1 class="title">{heading}</h1>
+				<p class="deck">{deck}</p>
+				{byline && (
+					<div class="byline">
+						<time datetime={byline.date}>{byline.date}</time>
+						{byline.readTime && <span class="dot">/</span>}
+						{byline.readTime && <span id={byline.readTimeId}>{byline.readTime}</span>}
+					</div>
+				)}
+			</header>
+
+			<div class:list={["col", contentClass]}>
+				<slot />
+			</div>
+		</article>
+	</main>
+</Layout>

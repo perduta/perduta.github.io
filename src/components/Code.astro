@@ -1,0 +1,22 @@
+---
+import { Code as ShikiCode } from 'astro:components';
+
+interface Props {
+	code: string;
+	lang?: string;
+	filename?: string;
+}
+
+const { code, lang = 'text', filename } = Astro.props;
+---
+
+<figure class="code">
+	<div class="code-shell">
+		<div class="code-bar">
+			<span class="dotgrp" aria-hidden="true"><span class="d"></span><span class="d"></span><span class="d"></span></span>
+			{filename && <span class="fname">{filename}</span>}
+			<button class="copy" type="button">copy</button>
+		</div>
+		<ShikiCode code={code.trim()} lang={lang} theme="css-variables" />
+	</div>
+</figure>

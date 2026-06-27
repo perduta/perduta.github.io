@@ -1,11 +1,57 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import EntryPage from '../layouts/EntryPage.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const description = 'Field notes on software, systems, and the details worth writing down.';
+const deck = 'Notes on software craft, autonomous systems, and whatever language I am currently learning the hard way.';
+
+const posts = (await getCollection('posts')).sort(
+	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const latest = posts[0];
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<EntryPage title="Writing — patryk.perduta" description={description} heading="Writing" deck={deck} contentClass="page-end">
+	{latest && (
+		<section class="feature">
+			<div>
+				<p class="feat-tag">latest</p>
+				<h2><a href={`/posts/${latest.id}/`}>{latest.data.title}</a></h2>
+				<p>{latest.data.description}</p>
+				<div class="pline">
+					<span>{latest.data.date.toISOString().slice(0, 10)}</span>
+					<span class="dot">/</span>
+					<span>{latest.data.topic}</span>
+					<span class="dot">/</span>
+					<span id="readtime-feat">2 min</span>
+				</div>
+			</div>
+			<a class="article-preview" href={`/posts/${latest.id}/`} aria-label={`Read ${latest.data.title}`}>
+				<span>hello_world();</span>
+			</a>
+		</section>
+	)}
+
+	<div class="arch-h"><span>Archive</span><span class="c">{posts.length} {posts.length === 1 ? 'entry' : 'entries'}</span></div>
+	<ul class="posts">
+		{posts.map((post) => {
+			const d = post.data.date;
+			const year = d.getFullYear();
+			const month = d.toLocaleDateString('en-US', { month: 'short' });
+			const day = d.getDate();
+			return (
+				<li class="post-row">
+					<div class="when">
+						<span class="yr">{year}</span>{month} {day}
+						<span class="cat">{post.data.topic}</span>
+					</div>
+					<div>
+						<h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
+						<p class="ex">{post.data.description}</p>
+					</div>
+					<div class="rt">2 min</div>
+				</li>
+			);
+		})}
+	</ul>
+</EntryPage>

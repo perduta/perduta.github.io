@@ -1,0 +1,16 @@
+---
+interface Props {
+	tag: string;
+	src?: string;
+}
+
+const { tag, src } = Astro.props;
+---
+
+<div class="callout">
+	<span class="ctag">{tag}</span>
+	<div class="cbody">
+		<slot />
+		{src && <span class="src">{src}</span>}
+	</div>
+</div>

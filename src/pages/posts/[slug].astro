@@ -1,0 +1,87 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import EntryPage from '../../layouts/EntryPage.astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+	const posts = await getCollection('posts');
+	return posts.map((post) => ({
+		params: { slug: post.id },
+		props: { post },
+	}));
+};
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+
+const allPosts = (await getCollection('posts')).sort(
+	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const currentIndex = allPosts.findIndex((p) => p.id === post.id);
+const prevPost = allPosts[currentIndex + 1];
+const nextPost = allPosts[currentIndex - 1];
+
+const dateStr = post.data.date.toISOString().slice(0, 10);
+const tocHeadings = headings.filter((h) => h.depth === 2);
+---
+
+<EntryPage
+	title={`${post.data.title} — patryk.perduta`}
+	description={post.data.description}
+	heading={post.data.title}
+	deck={post.data.deck}
+	byline={{ date: dateStr, readTime: '2 min read', readTimeId: 'readtime' }}
+>
+	{tocHeadings.length > 0 && (
+		<nav class="toc" aria-label="Contents">
+			<p class="th">Contents</p>
+			<ol>
+				{tocHeadings.map((h) => (
+					<li><a href={`#${h.slug}`}>{h.text}</a></li>
+				))}
+			</ol>
+		</nav>
+	)}
+
+	<Content />
+
+	<div class="tags">
+		{post.data.tags.map((tag: string) => (
+			<a href={`/posts/${post.id}/`}>{tag}</a>
+		))}
+	</div>
+
+	<div class="bio">
+		<div class="avatar" aria-hidden="true">PP</div>
+		<div>
+			<p class="b-name">{post.data.author}</p>
+			<p>Software developer writing field notes about code, systems, and tools that keep working after the laptop closes.</p>
+			<div class="links"><a href="https://github.com/perduta">github</a></div>
+		</div>
+	</div>
+
+	<nav class="pager" aria-label="Posts">
+		{prevPost ? (
+			<a class="prev" href={`/posts/${prevPost.id}/`}>
+				<div class="lbl">&larr; previous</div>
+				<div class="t">{prevPost.data.title}</div>
+			</a>
+		) : (
+			<a class="prev" href="/">
+				<div class="lbl">&larr; writing</div>
+				<div class="t">All posts & field notes</div>
+			</a>
+		)}
+		{nextPost ? (
+			<a class="next" href={`/posts/${nextPost.id}/`}>
+				<div class="lbl">next &rarr;</div>
+				<div class="t">{nextPost.data.title}</div>
+			</a>
+		) : (
+			<a class="next" href="#top">
+				<div class="lbl">top &uarr;</div>
+				<div class="t">Back to the beginning</div>
+			</a>
+		)}
+	</nav>
+</EntryPage>

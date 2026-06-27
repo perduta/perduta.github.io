@@ -1,23 +1,143 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		<meta name="description" content={description} />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap"
+			rel="stylesheet"
+		/>
+		<title>{title}</title>
+		<script is:inline>
+			(function () {
+				try {
+					var stored = localStorage.getItem('theme');
+					var theme =
+						stored ||
+						(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+					document.documentElement.setAttribute('data-theme', theme);
+				} catch (error) {}
+			})();
+		</script>
 	</head>
 	<body>
+		<div class="progress" id="progress"></div>
+
+		<header class="site">
+			<div class="site-inner">
+				<a class="brand" href="/">
+					<span class="mark" aria-hidden="true"></span>
+					<span class="btxt">patryk.perduta</span>
+				</a>
+				<nav class="nav" aria-label="Site">
+					<a href="/" aria-current="page">writing</a>
+					<a href="https://github.com/perduta">github</a>
+				</nav>
+				<button class="toggle" id="theme" type="button" aria-label="Toggle dark mode">
+					<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8L6 18M18 6l1.8-1.8"></path></svg>
+					<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.4 6.4 0 0 0 10.5 10.5z"></path></svg>
+				</button>
+			</div>
+		</header>
+
 		<slot />
+
+		<script>
+			const root = document.documentElement;
+			const themeToggle = document.querySelector<HTMLButtonElement>('#theme');
+
+			if (themeToggle) {
+				const syncThemeState = () => {
+					themeToggle.setAttribute(
+						'aria-pressed',
+						root.getAttribute('data-theme') === 'dark' ? 'true' : 'false',
+					);
+				};
+
+				syncThemeState();
+				themeToggle.addEventListener('click', () => {
+					const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+					root.setAttribute('data-theme', next);
+					syncThemeState();
+					try {
+						localStorage.setItem('theme', next);
+					} catch (error) {}
+				});
+			}
+
+			const progress = document.querySelector<HTMLElement>('#progress');
+			if (progress) {
+				let ticking = false;
+				const updateProgress = () => {
+					ticking = false;
+					const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+					progress.style.width = `${scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0}%`;
+				};
+				const requestProgressUpdate = () => {
+					if (!ticking) {
+						ticking = true;
+						window.requestAnimationFrame(updateProgress);
+					}
+				};
+				window.addEventListener('scroll', requestProgressUpdate, { passive: true });
+				window.addEventListener('resize', requestProgressUpdate);
+				updateProgress();
+			}
+
+			const readTime = document.querySelector<HTMLElement>('#readtime');
+			const article = document.querySelector<HTMLElement>('article');
+			if (readTime && article) {
+				const words = article.innerText.trim().split(/\s+/).length;
+				readTime.textContent = `${Math.max(1, Math.round(words / 220))} min read`;
+			}
+
+			document.querySelectorAll<HTMLElement>('figure.code').forEach((figure) => {
+				const button = figure.querySelector<HTMLButtonElement>('.copy');
+				const pre = figure.querySelector<HTMLElement>('pre');
+				if (!button || !pre) return;
+				button.addEventListener('click', async () => {
+					await navigator.clipboard.writeText(pre.innerText);
+					button.textContent = 'copied';
+					button.classList.add('done');
+					window.setTimeout(() => {
+						button.textContent = 'copy';
+						button.classList.remove('done');
+					}, 1600);
+				});
+			});
+
+			const tocLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('.toc a'));
+			const sections = Array.from(document.querySelectorAll<HTMLElement>('article h2[id]'));
+			if (tocLinks.length && sections.length) {
+				const updateToc = () => {
+					const marker = window.scrollY + 120;
+					let current: string | null = null;
+					sections.forEach((section) => {
+						if (section.offsetTop <= marker) current = section.id;
+					});
+					tocLinks.forEach((link) => {
+						link.classList.toggle('cur', link.getAttribute('href') === `#${current}`);
+					});
+				};
+				window.addEventListener('scroll', updateToc, { passive: true });
+				updateToc();
+			}
+		</script>
 	</body>
 </html>
-
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>
