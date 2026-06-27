@@ -31,6 +31,7 @@ const tocHeadings = headings.filter((h) => h.depth === 2);
 	heading={post.data.title}
 	deck={post.data.deck}
 	byline={{ date: dateStr }}
+	hasToc={tocHeadings.length > 0}
 >
 	{tocHeadings.length > 0 && (
 		<nav class="toc" aria-label="Contents">

@@ -12,13 +12,14 @@ interface Props {
 	deck: string;
 	byline?: Byline;
 	contentClass?: string;
+	hasToc?: boolean;
 }
 
-const { title, description, heading, deck, byline, contentClass } = Astro.props;
+const { title, description, heading, deck, byline, contentClass, hasToc } = Astro.props;
 ---
 
 <Layout title={title} description={description}>
-	<main class="post" id="top">
+	<main class:list={["post", { "has-toc": hasToc }]} id="top">
 		<article>
 			<header class="entry col">
 				<h1 class="title">{heading}</h1>
