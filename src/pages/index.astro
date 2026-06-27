@@ -8,47 +8,140 @@ const deck = 'Notes on software craft, autonomous systems, and whatever language
 const posts = (await getCollection('posts')).sort(
 	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
-const latest = posts[0];
+const total = posts.length;
 ---
 
 <EntryPage title="Writing — Field Notes" description={description} heading="Writing" deck={deck} contentClass="page-end">
-	{latest && (
-		<section class="feature">
-			<div>
-				<p class="feat-tag">latest</p>
-				<h2><a href={`/posts/${latest.id}/`}>{latest.data.title}</a></h2>
-				<p>{latest.data.description}</p>
-				<div class="pline">
-					<span>{latest.data.date.toISOString().slice(0, 10)}</span>
-					<span class="dot">/</span>
-					<span>{latest.data.topic}</span>
-				</div>
-			</div>
-			<a class="article-preview" href={`/posts/${latest.id}/`} aria-label={`Read ${latest.data.title}`}>
-				<span>hello_world();</span>
-			</a>
-		</section>
-	)}
-
-	<div class="arch-h"><span>Archive</span><span class="c">{posts.length} {posts.length === 1 ? 'entry' : 'entries'}</span></div>
-	<ul class="posts">
-		{posts.map((post) => {
+	<div class="stream-h"><span>Log</span><span class="c">{total} {total === 1 ? 'entry' : 'entries'}</span></div>
+	<ul class="stream">
+		{posts.map((post, i) => {
 			const d = post.data.date;
-			const year = d.getFullYear();
-			const month = d.toLocaleDateString('en-US', { month: 'short' });
-			const day = d.getDate();
+			const num = String(total - i).padStart(2, '0');
+			const href = `/posts/${post.id}/`;
 			return (
-				<li class="post-row">
-					<div class="when">
-						<span class="yr">{year}</span>{month} {day}
-						<span class="cat">{post.data.topic}</span>
-					</div>
-					<div>
-						<h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
-						<p class="ex">{post.data.description}</p>
+				<li class="stream-item">
+					<a class="media" href={href} aria-label={`Read ${post.data.title}`}>
+						<span>{post.data.topic}</span>
+					</a>
+					<div class="body">
+						<div class="meta">
+							<span class="idx">#{num}</span>
+							<time datetime={d.toISOString().slice(0, 10)}>{d.toISOString().slice(0, 10)}</time>
+							<span class="sep">/</span>
+							<span>{post.data.topic}</span>
+						</div>
+						<h2><a href={href}>{post.data.title}</a></h2>
+						<p>{post.data.description}</p>
+						<a class="more" href={href}>read <span aria-hidden="true">→</span></a>
 					</div>
 				</li>
 			);
 		})}
 	</ul>
 </EntryPage>
+
+<script>
+	import rough from 'roughjs';
+
+	let svg = null;
+
+	function resolvedAccent() {
+		// rough.js writes the colour as an SVG attribute; resolve the CSS var to a concrete value first.
+		const probe = document.createElement('span');
+		probe.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+		document.body.appendChild(probe);
+		const c = getComputedStyle(probe).color;
+		probe.remove();
+		return c || '#c8821f';
+	}
+
+	function drawArrow() {
+		if (svg) { svg.remove(); svg = null; }
+		const item = document.querySelector('.stream-item');
+		// only when there's empty room to the right (same threshold as the gutter layout)
+		if (!item || window.innerWidth < 1320) return;
+
+		const r = item.getBoundingClientRect();
+		const sx = window.scrollX, sy = window.scrollY;
+
+		// tip: just into the right edge of the first post, by the title
+		const tipX = r.right + sx - 8;
+		const tipY = r.top + sy + 48;
+		// start: off-screen to the right, just below the navbar, sweeping down and to the left
+		const startX = window.innerWidth + sx + 90;
+		const startY = sy + 92;
+
+		const w = document.documentElement.clientWidth; // visible width, excludes scrollbar
+		const h = Math.max(tipY, startY) + 160;
+
+		svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.setAttribute('width', String(w));
+		svg.setAttribute('height', String(h));
+		svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+		svg.setAttribute('aria-hidden', 'true');
+		Object.assign(svg.style, {
+			position: 'absolute', left: '0', top: '0',
+			pointerEvents: 'none', zIndex: '4', overflow: 'hidden',
+		});
+
+		const c = resolvedAccent();
+		const rc = rough.svg(svg);
+		const shaft = { stroke: c, strokeWidth: 6.5, roughness: 1.6, bowing: 1, seed: 42, disableMultiStroke: false };
+
+		// hand-drawn shaft: sample a bowed quadratic, then jitter each point so the
+		// macro shape itself wobbles (not just the stroke) and draw a curve through them
+		const dx = tipX - startX, dy = tipY - startY;
+		const len = Math.hypot(dx, dy) || 1;
+		const px = -dy / len, py = dx / len; // unit perpendicular
+		const curve = -150; // bow out to the right before hooking into the entry
+		const c1x = startX + dx * 0.5 + px * curve;
+		const c1y = startY + dy * 0.5 + py * curve;
+		// seeded PRNG so the wobble is identical on every draw
+		let seed = 0x9e3779b9;
+		const rng = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+		const jit = (n) => (rng() * 2 - 1) * n;
+		const N = 14;
+		const pts = [];
+		for (let i = 0; i <= N; i++) {
+			const t = i / N, mt = 1 - t;
+			const x = mt * mt * startX + 2 * mt * t * c1x + t * t * tipX;
+			const y = mt * mt * startY + 2 * mt * t * c1y + t * t * tipY;
+			const j = i === 0 || i === N ? 0 : 7; // keep the endpoints anchored
+			pts.push([x + jit(j), y + jit(j)]);
+		}
+		svg.appendChild(rc.curve(pts, shaft));
+
+		// fat filled arrowhead, oriented along the curve's tangent at the tip
+		const ang = Math.atan2(tipY - c1y, tipX - c1x);
+		const hl = 46, hw = 28;
+		const bx = tipX - hl * Math.cos(ang);
+		const by = tipY - hl * Math.sin(ang);
+		const hpx = -Math.sin(ang) * hw, hpy = Math.cos(ang) * hw;
+		svg.appendChild(rc.polygon(
+			[[tipX, tipY], [bx + hpx, by + hpy], [bx - hpx, by - hpy]],
+			{ fill: c, fillStyle: 'solid', stroke: c, strokeWidth: 2, roughness: 2, seed: 42 },
+		));
+
+		document.body.appendChild(svg);
+	}
+
+	// nudge the LOG underline down so it lands exactly on a 24px background grid line
+	function snapLogToGrid() {
+		const col = document.querySelector('.col.page-end');
+		const h = document.querySelector('.stream-h');
+		if (!col || !h) return;
+		col.style.paddingTop = '0px';
+		const bottom = h.getBoundingClientRect().bottom + window.scrollY;
+		const target = Math.ceil(bottom / 24) * 24;
+		col.style.paddingTop = (target - bottom) + 'px';
+	}
+
+	function refresh() { snapLogToGrid(); drawArrow(); }
+
+	refresh();
+	addEventListener('load', refresh);
+	addEventListener('resize', refresh);
+	if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+	// redraw with the new accent when the theme is toggled
+	new MutationObserver(drawArrow).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script>
