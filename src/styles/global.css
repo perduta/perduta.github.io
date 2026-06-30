@@ -169,12 +169,9 @@ td.num,th.num{ text-align:right; }
   .stream-item{ grid-template-columns:200px 1fr; column-gap:40px; width:calc(100% + 240px); margin-left:-240px; }
 }
 
-/* uniform media / widget panel */
-.media{ aspect-ratio:4/3; max-height:270px; position:relative; display:grid; place-items:center; overflow:hidden; border:1px solid var(--rule); text-decoration:none; background:linear-gradient(90deg,transparent 49.8%,var(--rule) 50%,transparent 50.2%),linear-gradient(transparent 49.8%,var(--rule) 50%,transparent 50.2%),repeating-linear-gradient(45deg,var(--card) 0 10px,transparent 10px 20px),var(--paper); transition:border-color .2s; }
-.media::before,.media::after{ content:""; position:absolute; width:14px; height:14px; border:2px solid var(--accent); }
-.media::before{ top:8px; left:8px; border-right:0; border-bottom:0; }
-.media::after{ right:8px; bottom:8px; border-top:0; border-left:0; }
-.media span{ padding:9px 14px; border:1px solid var(--rule); color:var(--accent); background:var(--paper); font-family:var(--mono); font-size:12px; }
+/* uniform media / widget panel: a plain framed surface; its contents (Placeholder,
+   Glider, …) paint themselves. */
+.media{ aspect-ratio:4/3; max-height:270px; position:relative; display:grid; place-items:center; overflow:hidden; border:1px solid var(--rule); text-decoration:none; background:var(--paper); transition:border-color .2s; }
 .stream-item:hover .media{ border-color:var(--faint); }
 
 .body .meta{ font-family:var(--mono); font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:0 0 12px; }

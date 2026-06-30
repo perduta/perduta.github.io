@@ -1,0 +1,18 @@
+---
+// The default media panel: a hatched fill, accent corner ticks, and the post's
+// topic on a small tag. Stands in until a post has its own widget or image.
+interface Props { topic: string; }
+const { topic } = Astro.props;
+---
+<span class="ph-fill"><span class="ph-tag">{topic}</span></span>
+
+<style>
+	.ph-fill{
+		position:absolute; inset:0; display:grid; place-items:center; overflow:hidden;
+		background:linear-gradient(90deg,transparent 49.8%,var(--rule) 50%,transparent 50.2%),linear-gradient(transparent 49.8%,var(--rule) 50%,transparent 50.2%),repeating-linear-gradient(45deg,var(--card) 0 10px,transparent 10px 20px),var(--paper);
+	}
+	.ph-fill::before,.ph-fill::after{ content:""; position:absolute; width:14px; height:14px; border:2px solid var(--accent); }
+	.ph-fill::before{ top:8px; left:8px; border-right:0; border-bottom:0; }
+	.ph-fill::after{ right:8px; bottom:8px; border-top:0; border-left:0; }
+	.ph-tag{ padding:9px 14px; border:1px solid var(--rule); color:var(--accent); background:var(--paper); font-family:var(--mono); font-size:12px; }
+</style>

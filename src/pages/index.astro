@@ -1,6 +1,13 @@
 ---
 import { getCollection } from 'astro:content';
 import EntryPage from '../layouts/EntryPage.astro';
+import Glider from '../components/Glider.astro';
+import Placeholder from '../components/Placeholder.astro';
+
+// Registry of media-panel widgets, keyed by the post's `widget` field. Add a new
+// entry here to make a widget available; any post without a (known) widget falls
+// back to Placeholder.
+const widgets: Record<string, any> = { glider: Glider };
 
 const description = 'Field notes on software, systems, and the details worth writing down.';
 const deck = 'Notes on software craft, autonomous systems, and whatever language I am currently learning the hard way.';
@@ -18,10 +25,11 @@ const total = posts.length;
 			const d = post.data.date;
 			const num = String(total - i).padStart(2, '0');
 			const href = `/posts/${post.id}/`;
+			const Widget = post.data.widget ? widgets[post.data.widget] : null;
 			return (
 				<li class="stream-item">
 					<a class="media" href={href} aria-label={`Read ${post.data.title}`}>
-						<span>{post.data.topic}</span>
+						{Widget ? <Widget /> : <Placeholder topic={post.data.topic} />}
 					</a>
 					<div class="body">
 						<div class="meta">

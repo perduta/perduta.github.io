@@ -8,6 +8,8 @@ const posts = defineCollection({
     description: z.string(),
     date: z.coerce.date(),
     topic: z.string(),
+    // name of the media-panel widget shown on the index; omit for the default placeholder
+    widget: z.string().optional(),
   }),
 });
 

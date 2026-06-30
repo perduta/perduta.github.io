@@ -1,0 +1,124 @@
+---
+// A Conway's Game of Life glider drifting across a grid twice as dense as the
+// page's 24px background lattice, its cells drawn as filled accent squares. The
+// motion is a real Game of Life simulation (the rules are applied to a set of
+// live cells in open coordinate space, so the glider translates exactly as it
+// should and never hits a wall). One glider flies down-right from the top-left;
+// when it leaves, the next flies down-left from the top-right, and so on.
+---
+<canvas class="glider-canvas" aria-hidden="true"></canvas>
+
+<style>
+	.glider-canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+</style>
+
+<script>
+	const CELL = 12;     // half the 24px page background grid — twice as dense
+	const STEP_MS = 380; // resting cadence
+
+	// Canonical glider seed, as [row, col] in a 3x3 box. Heads down-right.
+	const SEED_SE = [[0,1],[1,2],[2,0],[2,1],[2,2]];
+	// Mirror across the vertical axis (col -> 2-col) for one heading down-left.
+	const SEED_SW = SEED_SE.map(([r, c]) => [r, 2 - c]);
+
+	function resolve(el, name, fallback) {
+		const v = getComputedStyle(el).getPropertyValue(name).trim();
+		return v || fallback;
+	}
+
+	// one true Game of Life generation over a set of "r,c" live-cell keys
+	function nextGen(live) {
+		const counts = new Map();
+		for (const key of live) {
+			const [r, c] = key.split(',').map(Number);
+			for (let dr = -1; dr <= 1; dr++)
+				for (let dc = -1; dc <= 1; dc++) {
+					if (!dr && !dc) continue;
+					const k = (r + dr) + ',' + (c + dc);
+					counts.set(k, (counts.get(k) || 0) + 1);
+				}
+		}
+		const next = new Set();
+		for (const [k, n] of counts) {
+			if (n === 3 || (n === 2 && live.has(k))) next.add(k);
+		}
+		return next;
+	}
+
+	function setup(canvas) {
+		const ctx = canvas.getContext('2d');
+		let cols = 1, rows = 1;   // recomputed from the panel size
+		let flight = 0;
+		let live = new Set();
+
+		// seed the current flight's glider just off the top edge
+		function launch() {
+			const f = [
+				{ seed: SEED_SE, row: -3, col: -2 },
+				{ seed: SEED_SW, row: -3, col: cols - 2 },
+			][flight];
+			live = new Set(f.seed.map(([r, c]) => (r + f.row) + ',' + (c + f.col)));
+		}
+
+		function resize() {
+			const dpr = window.devicePixelRatio || 1;
+			const w = canvas.clientWidth, h = canvas.clientHeight;
+			if (!w || !h) return;
+			cols = Math.max(3, Math.round(w / CELL));
+			rows = Math.max(3, Math.round(h / CELL));
+			canvas.width = Math.round(w * dpr);
+			canvas.height = Math.round(h * dpr);
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			draw();
+		}
+
+		function draw() {
+			const w = canvas.clientWidth, h = canvas.clientHeight;
+			if (!w || !h) return;
+			const cw = w / cols, ch = h / rows;
+			const accent = resolve(canvas, '--accent', '#c8821f');
+			const rule = resolve(canvas, '--rule', '#e7e2d8');
+
+			ctx.clearRect(0, 0, w, h);
+
+			// faint background lattice
+			ctx.strokeStyle = rule;
+			ctx.globalAlpha = 0.55;
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			for (let c = 1; c < cols; c++) { const x = Math.round(c * cw) + 0.5; ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+			for (let r = 1; r < rows; r++) { const y = Math.round(r * ch) + 0.5; ctx.moveTo(0, y); ctx.lineTo(w, y); }
+			ctx.stroke();
+			ctx.globalAlpha = 1;
+
+			// live cells as filled squares
+			ctx.fillStyle = accent;
+			for (const key of live) {
+				const [r, c] = key.split(',').map(Number);
+				if (r < 0 || r >= rows || c < 0 || c >= cols) continue;
+				ctx.fillRect(Math.round(c * cw), Math.round(r * ch), Math.ceil(cw), Math.ceil(ch));
+			}
+		}
+
+		function step() {
+			live = nextGen(live);
+			// once the whole glider has dropped past the bottom edge, launch the next
+			let allBelow = true;
+			for (const key of live) { if (Number(key.split(',')[0]) <= rows - 1) { allBelow = false; break; } }
+			if (allBelow) {
+				flight = (flight + 1) % 2;
+				launch();
+			}
+			draw();
+		}
+
+		new ResizeObserver(resize).observe(canvas);
+		resize();
+		launch();
+		setInterval(step, STEP_MS);
+		// repaint with the new accent when the theme is toggled
+		new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+	}
+
+	document.querySelectorAll('.glider-canvas').forEach(setup);
+</script>
