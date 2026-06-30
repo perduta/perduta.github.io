@@ -65,8 +65,8 @@ const total = posts.length;
 		const r = item.getBoundingClientRect();
 		const sx = window.scrollX, sy = window.scrollY;
 
-		// tip: just into the right edge of the first post, by the title
-		const tipX = r.right + sx - 8;
+		// tip: just past the right edge of the first post, clearing the hover bracket
+		const tipX = r.right + sx + 30;
 		const tipY = r.top + sy + 48;
 		// start: off-screen to the right, just below the navbar, sweeping down and to the left
 		const startX = window.innerWidth + sx + 90;
@@ -179,7 +179,18 @@ const total = posts.length;
 			ann.show();
 		});
 		item.addEventListener('pointerleave', () => {
-			if (ann) { ann.remove(); ann = null; }
+			if (!ann) return;
+			const leaving = ann;
+			ann = null;
+			// fade the sketch out instead of snapping it away
+			const el = leaving._svg;
+			if (el) {
+				el.style.transition = 'opacity .3s ease';
+				el.style.opacity = '0';
+				setTimeout(() => leaving.remove(), 300);
+			} else {
+				leaving.remove();
+			}
 		});
 	});
 </script>
