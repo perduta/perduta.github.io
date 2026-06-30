@@ -65,8 +65,8 @@ const total = posts.length;
 		const r = item.getBoundingClientRect();
 		const sx = window.scrollX, sy = window.scrollY;
 
-		// tip: just past the right edge of the first post, clearing the hover bracket
-		const tipX = r.right + sx + 30;
+		// tip: well past the right edge of the first post, leaving a gap to the hover bracket
+		const tipX = r.right + sx + 52;
 		const tipY = r.top + sy + 48;
 		// start: off-screen to the right, just below the navbar, sweeping down and to the left
 		const startX = window.innerWidth + sx + 90;
@@ -173,7 +173,9 @@ const total = posts.length;
 				brackets: ['left', 'right'],
 				color: resolvedAccent(),
 				strokeWidth: 1.6,
-				padding: [6, 12],
+				// negative vertical padding insets the bracket so it hugs the post's
+				// content height rather than the taller min-height box
+				padding: [-16, 14, -14, 14],
 				animationDuration: 250,
 			});
 			ann.show();
