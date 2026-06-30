@@ -157,11 +157,8 @@ td.num,th.num{ text-align:right; }
 @media (min-width:1081px){ .stream-h{ margin-left:-30px; padding-left:30px; } }
 .stream{ list-style:none; margin:0; padding:0; }
 .stream-item{ position:relative; display:grid; grid-template-columns:300px 1fr; gap:32px; padding:36px 0; align-items:start; min-height:270px; cursor:pointer; }
-/* inviting hover wash across the whole post box — translucent accent tint so the
-   background grid and the accent margin line stay visible through it */
-.stream-item::before{ content:""; position:absolute; inset:6px -16px; background:color-mix(in oklch,var(--accent) 7%,transparent); opacity:0; transition:opacity .2s; pointer-events:none; }
-.stream-item:hover::before{ opacity:1; }
-/* keep media + text painted above the wash */
+/* hover affordance is hand-drawn rough-notation brackets (see index.astro);
+   keep media + text painted above the stretched link */
 .stream-item .media, .stream-item .body{ position:relative; z-index:1; }
 /* stretched link: clicking anywhere on the post box opens the post */
 .stream-item .body h2 a::after{ content:""; position:absolute; inset:0; z-index:2; }

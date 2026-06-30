@@ -42,6 +42,7 @@ const total = posts.length;
 
 <script>
 	import rough from 'roughjs';
+	import { annotate } from 'rough-notation';
 
 	let svg = null;
 
@@ -160,4 +161,25 @@ const total = posts.length;
 	if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
 	// redraw with the new accent when the theme is toggled
 	new MutationObserver(drawArrow).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+	// hand-drawn brackets sketch in around a post on hover, inviting the click.
+	// created per-hover so the colour and bounding box are always current.
+	document.querySelectorAll('.stream-item').forEach((item) => {
+		let ann = null;
+		item.addEventListener('pointerenter', () => {
+			if (ann) return;
+			ann = annotate(item, {
+				type: 'bracket',
+				brackets: ['left', 'right'],
+				color: resolvedAccent(),
+				strokeWidth: 1.6,
+				padding: [6, 12],
+				animationDuration: 250,
+			});
+			ann.show();
+		});
+		item.addEventListener('pointerleave', () => {
+			if (ann) { ann.remove(); ann = null; }
+		});
+	});
 </script>
