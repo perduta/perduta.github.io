@@ -164,32 +164,63 @@ const total = posts.length;
 
 	// hand-drawn brackets sketch in around a post on hover, inviting the click.
 	// created per-hover so the colour and bounding box are always current.
+	const DRAW_MS = 300;
+
+	function bracketPaths(svg) { return svg ? [...svg.querySelectorAll('path')] : []; }
+
+	// drive every stroke together so both brackets draw — and later un-draw — at the
+	// same time, rather than rough-notation's staggered per-stroke animation.
+	function primeHidden(svg) {
+		for (const p of bracketPaths(svg)) {
+			const len = p.getTotalLength();
+			p.style.transition = 'none';
+			p.style.strokeDasharray = String(len);
+			p.style.strokeDashoffset = String(len);
+		}
+	}
+	function drive(svg, draw) {
+		for (const p of bracketPaths(svg)) {
+			const len = p.getTotalLength();
+			p.style.strokeDasharray = String(len);
+			p.style.transition = `stroke-dashoffset ${DRAW_MS}ms ease`;
+			p.style.strokeDashoffset = draw ? '0' : String(len);
+		}
+	}
+
 	document.querySelectorAll('.stream-item').forEach((item) => {
 		let ann = null;
 		item.addEventListener('pointerenter', () => {
 			if (ann) return;
+			// span the full post width, but size the bracket height to the media panel:
+			// top one background cell (24px) above it, bottom one cell below it.
+			// rough-notation's bracket applies 2x the given padding per side, so halve.
+			const cell = 24;
+			const ir = item.getBoundingClientRect();
+			const media = item.querySelector('.media');
+			const mr = media ? media.getBoundingClientRect() : ir;
+			const padTop = (ir.top - (mr.top - cell)) / 2;
+			const padBottom = ((mr.bottom + cell) - ir.bottom) / 2;
 			ann = annotate(item, {
 				type: 'bracket',
 				brackets: ['left', 'right'],
 				color: resolvedAccent(),
 				strokeWidth: 1.6,
-				// negative vertical padding insets the bracket so it hugs the post's
-				// content height rather than the taller min-height box
-				padding: [-16, 14, -14, 14],
-				animationDuration: 250,
+				padding: [padTop, 14, padBottom, 14],
+				animate: false, // we run the draw-in ourselves so both sides move together
 			});
 			ann.show();
+			const svg = ann._svg;
+			primeHidden(svg);
+			requestAnimationFrame(() => requestAnimationFrame(() => drive(svg, true)));
 		});
 		item.addEventListener('pointerleave', () => {
 			if (!ann) return;
 			const leaving = ann;
 			ann = null;
-			// fade the sketch out instead of snapping it away
-			const el = leaving._svg;
-			if (el) {
-				el.style.transition = 'opacity .3s ease';
-				el.style.opacity = '0';
-				setTimeout(() => leaving.remove(), 300);
+			const svg = leaving._svg;
+			if (svg) {
+				drive(svg, false); // un-draw both brackets together, then remove
+				setTimeout(() => leaving.remove(), DRAW_MS);
 			} else {
 				leaving.remove();
 			}
