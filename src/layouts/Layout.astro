@@ -9,7 +9,7 @@ interface Props {
 const { title, description } = Astro.props;
 
 const path = Astro.url.pathname;
-const onWriting = path === '/' || path.startsWith('/posts');
+const onWriting = path === '/' || path.startsWith('/posts') || path.startsWith('/page');
 const onAbout = path.startsWith('/about');
 ---
 

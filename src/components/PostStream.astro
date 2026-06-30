@@ -1,0 +1,214 @@
+---
+import Glider from './Glider.astro';
+import Placeholder from './Placeholder.astro';
+import type { PostEntry } from '../lib/posts';
+
+interface Props {
+	posts: PostEntry[];
+	total: number;
+	startIndex?: number;
+	showNewPostArrow?: boolean;
+}
+
+const { posts, total, startIndex = 0, showNewPostArrow = false } = Astro.props;
+
+// Registry of media-panel widgets, keyed by the post's `widget` field. Add a new
+// entry here to make a widget available; any post without a known widget falls
+// back to Placeholder.
+const widgets: Record<string, any> = { glider: Glider };
+---
+
+<div class="stream-h"><span>Log</span><span class="c">{total} {total === 1 ? 'entry' : 'entries'}</span></div>
+<ul class="stream" data-new-post-arrow={showNewPostArrow ? 'true' : 'false'}>
+	{posts.map((post, i) => {
+		const d = post.data.date;
+		const num = String(total - (startIndex + i)).padStart(2, '0');
+		const href = `/posts/${post.id}/`;
+		const Widget = post.data.widget ? widgets[post.data.widget] : null;
+		return (
+			<li class="stream-item">
+				<a class="media" href={href} aria-label={`Read ${post.data.title}`}>
+					{Widget ? <Widget /> : <Placeholder topic={post.data.topic} />}
+				</a>
+				<div class="body">
+					<div class="meta">
+						<span class="idx">#{num}</span>
+						<time datetime={d.toISOString().slice(0, 10)}>{d.toISOString().slice(0, 10)}</time>
+						<span class="sep">/</span>
+						<span>{post.data.topic}</span>
+					</div>
+					<h2><a href={href}>{post.data.title}</a></h2>
+					<p>{post.data.description}</p>
+					<a class="more" href={href}>read <span aria-hidden="true">&rarr;</span></a>
+				</div>
+			</li>
+		);
+	})}
+</ul>
+
+<script>
+	import rough from 'roughjs';
+	import { annotate } from 'rough-notation';
+
+	let svg = null;
+
+	function resolvedAccent() {
+		const probe = document.createElement('span');
+		probe.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+		document.body.appendChild(probe);
+		const c = getComputedStyle(probe).color;
+		probe.remove();
+		return c || '#c8821f';
+	}
+
+	function drawArrow() {
+		if (svg) { svg.remove(); svg = null; }
+		const stream = document.querySelector('.stream[data-new-post-arrow="true"]');
+		const item = stream ? stream.querySelector('.stream-item') : null;
+		if (!item || window.innerWidth < 1320) return;
+
+		const r = item.getBoundingClientRect();
+		const sx = window.scrollX, sy = window.scrollY;
+		const tipX = r.right + sx + 52;
+		const tipY = r.top + sy + 48;
+		const startX = window.innerWidth + sx + 90;
+		const startY = sy + 92;
+		const w = document.documentElement.clientWidth;
+		const h = Math.max(tipY, startY) + 160;
+
+		svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.setAttribute('width', String(w));
+		svg.setAttribute('height', String(h));
+		svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+		svg.setAttribute('aria-hidden', 'true');
+		Object.assign(svg.style, {
+			position: 'absolute', left: '0', top: '0',
+			pointerEvents: 'none', zIndex: '4', overflow: 'hidden',
+		});
+
+		const c = resolvedAccent();
+		const rc = rough.svg(svg);
+		const dx = tipX - startX, dy = tipY - startY;
+		const len = Math.hypot(dx, dy) || 1;
+		const px = -dy / len, py = dx / len;
+		const curve = -150;
+		const c1x = startX + dx * 0.5 + px * curve;
+		const c1y = startY + dy * 0.5 + py * curve;
+		const ang = Math.atan2(tipY - c1y, tipX - c1x);
+		const headLen = 68, spread = 0.5;
+		const N = 14, pts = [];
+		for (let i = 0; i <= N; i++) {
+			const t = i / N, mt = 1 - t;
+			pts.push([
+				mt * mt * startX + 2 * mt * t * c1x + t * t * tipX,
+				mt * mt * startY + 2 * mt * t * c1y + t * t * tipY,
+			]);
+		}
+
+		const PASSES = 3;
+		for (let p = 0; p < PASSES; p++) {
+			const o = { stroke: c, strokeWidth: 1.1, roughness: 1.4, bowing: 1, seed: 42 + p * 7 };
+			svg.appendChild(rc.curve(pts, o));
+			svg.appendChild(rc.line(tipX, tipY, tipX - headLen * Math.cos(ang - spread), tipY - headLen * Math.sin(ang - spread), o));
+			svg.appendChild(rc.line(tipX, tipY, tipX - headLen * Math.cos(ang + spread), tipY - headLen * Math.sin(ang + spread), o));
+		}
+
+		const NS = 'http://www.w3.org/2000/svg';
+		const pathId = 'arrow-label-path';
+		const labelPath = document.createElementNS(NS, 'path');
+		labelPath.setAttribute('id', pathId);
+		labelPath.setAttribute('d', `M ${tipX} ${tipY} Q ${c1x} ${c1y} ${startX} ${startY}`);
+		labelPath.setAttribute('fill', 'none');
+		svg.appendChild(labelPath);
+
+		const text = document.createElementNS(NS, 'text');
+		text.setAttribute('fill', c);
+		text.setAttribute('dy', '32');
+		Object.assign(text.style, { fontFamily: '"Caveat", cursive', fontSize: '34px', fontWeight: '700', letterSpacing: '4px' });
+		const textPath = document.createElementNS(NS, 'textPath');
+		textPath.setAttribute('href', `#${pathId}`);
+		textPath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`);
+		textPath.setAttribute('startOffset', '50%');
+		textPath.setAttribute('text-anchor', 'middle');
+		textPath.textContent = 'NEW POST';
+		text.appendChild(textPath);
+		svg.appendChild(text);
+
+		document.body.appendChild(svg);
+	}
+
+	function snapLogToGrid() {
+		const col = document.querySelector('.col.page-end');
+		const h = document.querySelector('.stream-h');
+		if (!col || !h) return;
+		col.style.paddingTop = '0px';
+		const bottom = h.getBoundingClientRect().bottom + window.scrollY;
+		const target = Math.ceil(bottom / 24) * 24;
+		col.style.paddingTop = (target - bottom) + 'px';
+	}
+
+	function refresh() { snapLogToGrid(); drawArrow(); }
+
+	refresh();
+	addEventListener('load', refresh);
+	addEventListener('resize', refresh);
+	if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+	new MutationObserver(drawArrow).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+	const DRAW_MS = 300;
+
+	function bracketPaths(svg) { return svg ? [...svg.querySelectorAll('path')] : []; }
+	function primeHidden(svg) {
+		for (const p of bracketPaths(svg)) {
+			const len = p.getTotalLength();
+			p.style.transition = 'none';
+			p.style.strokeDasharray = String(len);
+			p.style.strokeDashoffset = String(len);
+		}
+	}
+	function drive(svg, draw) {
+		for (const p of bracketPaths(svg)) {
+			const len = p.getTotalLength();
+			p.style.strokeDasharray = String(len);
+			p.style.transition = `stroke-dashoffset ${DRAW_MS}ms ease`;
+			p.style.strokeDashoffset = draw ? '0' : String(len);
+		}
+	}
+
+	document.querySelectorAll('.stream-item').forEach((item) => {
+		let ann = null;
+		item.addEventListener('pointerenter', () => {
+			if (ann) return;
+			const cell = 24;
+			const ir = item.getBoundingClientRect();
+			const media = item.querySelector('.media');
+			const mr = media ? media.getBoundingClientRect() : ir;
+			const padTop = (ir.top - (mr.top - cell)) / 2;
+			const padBottom = ((mr.bottom + cell) - ir.bottom) / 2;
+			ann = annotate(item, {
+				type: 'bracket',
+				brackets: ['left', 'right'],
+				color: resolvedAccent(),
+				strokeWidth: 1.6,
+				padding: [padTop, 14, padBottom, 14],
+				animate: false,
+			});
+			ann.show();
+			const svg = ann._svg;
+			primeHidden(svg);
+			requestAnimationFrame(() => requestAnimationFrame(() => drive(svg, true)));
+		});
+		item.addEventListener('pointerleave', () => {
+			if (!ann) return;
+			const leaving = ann;
+			ann = null;
+			const svg = leaving._svg;
+			if (svg) {
+				drive(svg, false);
+				setTimeout(() => leaving.remove(), DRAW_MS);
+			} else {
+				leaving.remove();
+			}
+		});
+	});
+</script>

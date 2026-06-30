@@ -1,0 +1,30 @@
+---
+import { getPageHref } from '../lib/posts';
+
+interface Props {
+	currentPage: number;
+	totalPages: number;
+}
+
+const { currentPage, totalPages } = Astro.props;
+const hasNewer = currentPage > 1;
+const hasOlder = currentPage < totalPages;
+const newerHref = getPageHref(currentPage - 1);
+const olderHref = getPageHref(currentPage + 1);
+---
+
+{totalPages > 1 && (
+	<nav class="archive-pager" aria-label="Writing pages">
+		{hasNewer ? (
+			<a class="newer" href={newerHref}>&larr; newer</a>
+		) : (
+			<span class="newer" aria-disabled="true">&larr; newer</span>
+		)}
+		<span class="count">page {currentPage} / {totalPages}</span>
+		{hasOlder ? (
+			<a class="older" href={olderHref}>older &rarr;</a>
+		) : (
+			<span class="older" aria-disabled="true">older &rarr;</span>
+		)}
+	</nav>
+)}

@@ -1,0 +1,38 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import ArchivePager from '../../components/ArchivePager.astro';
+import PostStream from '../../components/PostStream.astro';
+import EntryPage from '../../layouts/EntryPage.astro';
+import { POSTS_PER_PAGE, getPagePosts, getTotalPages, sortPosts } from '../../lib/posts';
+
+const description = 'Older field notes on software, systems, and the details worth writing down.';
+const heading = 'Fighting my fear of being wrong in public, in public.';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+	const allPosts = sortPosts(await getCollection('posts'));
+	const totalPages = getTotalPages(allPosts.length);
+
+	return Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => {
+		const currentPage = i + 2;
+		const { items, startIndex } = getPagePosts(allPosts, currentPage, POSTS_PER_PAGE);
+		return {
+			params: { page: String(currentPage) },
+			props: {
+				posts: items,
+				total: allPosts.length,
+				totalPages,
+				currentPage,
+				startIndex,
+			},
+		};
+	});
+};
+
+const { posts, total, totalPages, currentPage, startIndex } = Astro.props;
+---
+
+<EntryPage title={`Writing, page ${currentPage} — Field Notes`} description={description} heading={heading} headingClass="lead" contentClass="page-end">
+	<PostStream posts={posts} total={total} startIndex={startIndex} />
+	<ArchivePager currentPage={currentPage} totalPages={totalPages} />
+</EntryPage>

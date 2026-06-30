@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import { getCollection, render } from 'astro:content';
 import EntryPage from '../../layouts/EntryPage.astro';
+import { sortPosts } from '../../lib/posts';
 
 export const getStaticPaths: GetStaticPaths = async () => {
 	const posts = await getCollection('posts');
@@ -14,9 +15,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 const { post } = Astro.props;
 const { Content, headings } = await render(post);
 
-const allPosts = (await getCollection('posts')).sort(
-	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
+const allPosts = sortPosts(await getCollection('posts'));
 const currentIndex = allPosts.findIndex((p) => p.id === post.id);
 const prevPost = allPosts[currentIndex + 1];
 const nextPost = allPosts[currentIndex - 1];
