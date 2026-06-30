@@ -10,15 +10,16 @@ import Placeholder from '../components/Placeholder.astro';
 const widgets: Record<string, any> = { glider: Glider };
 
 const description = 'Field notes on software, systems, and the details worth writing down.';
-const deck = 'Notes on software craft, autonomous systems, and whatever language I am currently learning the hard way.';
+const heading = 'Fighting my fear of being wrong in public, in public.';
 
-const posts = (await getCollection('posts')).sort(
-	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
+const posts = (await getCollection('posts')).sort((a, b) => {
+	const byDate = b.data.date.valueOf() - a.data.date.valueOf();
+	return byDate || a.id.localeCompare(b.id);
+});
 const total = posts.length;
 ---
 
-<EntryPage title="Writing — Field Notes" description={description} heading="Writing" deck={deck} contentClass="page-end">
+<EntryPage title="Writing — Field Notes" description={description} heading={heading} headingClass="lead" contentClass="page-end">
 	<div class="stream-h"><span>Log</span><span class="c">{total} {total === 1 ? 'entry' : 'entries'}</span></div>
 	<ul class="stream">
 		{posts.map((post, i) => {

@@ -75,17 +75,30 @@ body{
 .toggle:hover{ color:var(--ink); border-color:var(--faint); } .toggle svg{ width:15px; height:15px; }
 .toggle .moon{ display:none; } [data-theme="dark"] .toggle .sun{ display:none; } [data-theme="dark"] .toggle .moon{ display:block; }
 
-.post{ max-width:1060px; margin:0 auto; padding:0 40px; }
-.col{ max-width:var(--col); margin-left:auto; margin-right:auto; position:relative; }
+.post{ width:100%; max-width:1060px; margin:0 auto; padding:0 40px; }
+.col{ width:100%; max-width:var(--col); margin-left:auto; margin-right:auto; position:relative; }
 .col::before{ content:""; position:absolute; left:-30px; top:-6px; bottom:-6px; width:0; border-left:1px solid var(--accent); }
 /* header and content each draw the line; meet them seamlessly so they don't overlap and look thicker at the junction */
 .entry.col::before{ bottom:0; }
 .col:not(.entry)::before{ top:0; }
 @media (max-width:1080px){ .col::before{ display:none; } }
+/* on the index, stretch the content column (and its accent line) down to the
+   bottom of the viewport even when the log is short. making .page-end a flex
+   item also gives it its own formatting context, so its first child's top margin
+   can't collapse out and leave a gap in the line before the grid-snap script runs. */
+body:has(.col.page-end){ min-height:100dvh; display:flex; flex-direction:column; }
+body:has(.col.page-end) > main.post{ flex:1 0 auto; display:flex; flex-direction:column; }
+main.post:has(.col.page-end) > article{ flex:1 0 auto; display:flex; flex-direction:column; }
+.col.page-end{ flex:1 0 auto; }
+/* the stretched column already meets the viewport bottom, so don't let the line's
+   usual 6px overshoot spill past it and create a stray scrollbar. */
+.col.page-end::before{ bottom:0; }
 
 /* notebook masthead */
 header.entry{ padding:32px 0 32px; }
+header.entry:has(h1.lead){ padding-bottom:8px; }
 h1.title{ font-family:var(--serif); font-weight:600; font-size:clamp(34px,5vw,48px); line-height:1.05; letter-spacing:-0.02em; margin:0 0 20px; text-wrap:balance; }
+h1.title.lead{ font-weight:500; font-size:clamp(22px,2.6vw,28px); line-height:1.2; letter-spacing:-0.005em; }
 .deck{ font-size:21px; line-height:1.5; color:var(--muted); margin:0 0 30px; text-wrap:pretty; }
 .kicker{ margin:0 0 18px; display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 24px; }
 .crumb{ font-family:var(--mono); font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0; }
