@@ -169,7 +169,7 @@ td.num,th.num{ text-align:right; }
 /* extend the underline left so it meets the vertical margin line (only when that line is shown) */
 @media (min-width:1081px){ .stream-h{ margin-left:-30px; padding-left:30px; } }
 .stream{ list-style:none; margin:0; padding:0; }
-.stream-item{ position:relative; display:grid; grid-template-columns:300px 1fr; gap:32px; padding:16px 0; align-items:start; min-height:230px; cursor:pointer; }
+.stream-item{ position:relative; display:grid; grid-template-columns:216px 1fr; gap:32px; padding:12px 0 36px; align-items:start; min-height:240px; cursor:pointer; }
 /* hover affordance is hand-drawn rough-notation brackets (see index.astro);
    keep media + text painted above the stretched link */
 .stream-item .media, .stream-item .body{ position:relative; z-index:1; }
@@ -177,14 +177,16 @@ td.num,th.num{ text-align:right; }
 .stream-item .body h2 a::after{ content:""; position:absolute; inset:0; z-index:2; }
 /* the explicit link stays individually clickable on top of the stretched link */
 .stream-item .media{ z-index:3; }
-/* wide screens: float the media out into the left gutter, left of the margin line; text body keeps the column */
+/* wide screens: float the media out into the left gutter, one grid column left of the margin line; text body keeps the column */
 @media (min-width:1320px){
-  .stream-item{ grid-template-columns:200px 1fr; column-gap:60px; width:calc(100% + 260px); margin-left:-260px; }
+  .stream-item{ grid-template-columns:216px 1fr; column-gap:54px; width:calc(100% + 270px); margin-left:-270px; }
 }
 
 /* uniform media / widget panel: a plain framed surface; its contents (Placeholder,
-   Glider, …) paint themselves. */
-.media{ aspect-ratio:4/3; max-height:270px; position:relative; display:grid; place-items:center; overflow:hidden; border:1px solid var(--rule); text-decoration:none; background:var(--paper); transition:border-color .2s; }
+   Glider, …) paint themselves. fixed at 9x8 grid cells. pulled up by the item's
+   own top padding so its top edge lands on a grid line, independent of the
+   text column which keeps its normal top padding. */
+.media{ width:216px; height:192px; margin-top:-12px; position:relative; display:grid; place-items:center; overflow:hidden; border:1px solid var(--rule); text-decoration:none; background:var(--paper); transition:border-color .2s; }
 .stream-item:hover .media{ border-color:var(--faint); }
 
 .body .meta{ font-family:var(--mono); font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:0 0 12px; }
@@ -247,7 +249,7 @@ pre .kw{ color:var(--code-keyword); } pre .str{ color:var(--code-string); } pre 
 
 @media (max-width:760px){
   .stream-item{ grid-template-columns:1fr; gap:18px; }
-  .media{ width:100%; max-width:320px; aspect-ratio:4/3; margin:0 auto; }
+  .media{ margin:0 auto; }
   .archive-pager{ grid-template-columns:1fr 1fr; gap:10px 16px; }
   .archive-pager .count{ grid-column:1 / -1; grid-row:1; justify-self:start; }
   .archive-pager .newer{ grid-column:1; grid-row:2; }

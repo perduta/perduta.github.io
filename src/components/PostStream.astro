@@ -47,7 +47,6 @@ const widgets: Record<string, any> = { glider: Glider };
 
 <script>
 	import rough from 'roughjs';
-	import { annotate } from 'rough-notation';
 
 	let svg = null;
 
@@ -174,40 +173,61 @@ const widgets: Record<string, any> = { glider: Glider };
 		}
 	}
 
+	// hand-drawn bracket: vertical stroke one grid cell out from the item on each
+	// side, with a short tick (half that gap) at top/bottom pointing back at it.
+	function buildBracket(item) {
+		const cell = 24, gap = 24, tick = 12;
+		const ir = item.getBoundingClientRect();
+		const media = item.querySelector('.media');
+		const mr = media ? media.getBoundingClientRect() : ir;
+		const sx = window.scrollX, sy = window.scrollY;
+
+		const topY = mr.top - cell + sy;
+		const bottomY = mr.bottom + cell + sy;
+		const leftX = ir.left - gap + sx;
+		const rightX = ir.right + gap + sx;
+
+		const bracket = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		const w = document.documentElement.clientWidth;
+		const h = document.documentElement.scrollHeight;
+		bracket.setAttribute('width', String(w));
+		bracket.setAttribute('height', String(h));
+		bracket.setAttribute('viewBox', `0 0 ${w} ${h}`);
+		bracket.setAttribute('aria-hidden', 'true');
+		Object.assign(bracket.style, {
+			position: 'absolute', left: '0', top: '0',
+			pointerEvents: 'none', zIndex: '4', overflow: 'visible',
+		});
+
+		const rc = rough.svg(bracket);
+		const o = { stroke: resolvedAccent(), strokeWidth: 1.6, roughness: 1.2, bowing: 1 };
+
+		bracket.appendChild(rc.line(leftX, topY, leftX, bottomY, o));
+		bracket.appendChild(rc.line(leftX, topY, leftX + tick, topY, o));
+		bracket.appendChild(rc.line(leftX, bottomY, leftX + tick, bottomY, o));
+
+		bracket.appendChild(rc.line(rightX, topY, rightX, bottomY, o));
+		bracket.appendChild(rc.line(rightX, topY, rightX - tick, topY, o));
+		bracket.appendChild(rc.line(rightX, bottomY, rightX - tick, bottomY, o));
+
+		document.body.appendChild(bracket);
+		return bracket;
+	}
+
 	document.querySelectorAll('.stream-item').forEach((item) => {
-		let ann = null;
+		let bracket = null;
 		item.addEventListener('pointerenter', () => {
-			if (ann || window.innerWidth <= 760) return;
-			const cell = 24;
-			const ir = item.getBoundingClientRect();
-			const media = item.querySelector('.media');
-			const mr = media ? media.getBoundingClientRect() : ir;
-			const padTop = (ir.top - (mr.top - cell)) / 2;
-			const padBottom = ((mr.bottom + cell) - ir.bottom) / 2;
-			ann = annotate(item, {
-				type: 'bracket',
-				brackets: ['left', 'right'],
-				color: resolvedAccent(),
-				strokeWidth: 1.6,
-				padding: [padTop, 14, padBottom, 14],
-				animate: false,
-			});
-			ann.show();
-			const svg = ann._svg;
-			primeHidden(svg);
-			requestAnimationFrame(() => requestAnimationFrame(() => drive(svg, true)));
+			if (bracket || window.innerWidth <= 760) return;
+			bracket = buildBracket(item);
+			primeHidden(bracket);
+			requestAnimationFrame(() => requestAnimationFrame(() => drive(bracket, true)));
 		});
 		item.addEventListener('pointerleave', () => {
-			if (!ann) return;
-			const leaving = ann;
-			ann = null;
-			const svg = leaving._svg;
-			if (svg) {
-				drive(svg, false);
-				setTimeout(() => leaving.remove(), DRAW_MS);
-			} else {
-				leaving.remove();
-			}
+			if (!bracket) return;
+			const leaving = bracket;
+			bracket = null;
+			drive(leaving, false);
+			setTimeout(() => leaving.remove(), DRAW_MS);
 		});
 	});
 </script>
