@@ -35,9 +35,9 @@
      (background grid, media panels, glider density, JS snapping) is expressed
      in --cell so the lattice scale is a one-line change. JS reads it via
      getComputedStyle — never hardcode the number. */
-  --cell: 24px;
-  /* offset of the vertical accent line into the left gutter */
-  --gutter-line: 30px;
+  --cell: 30px;
+  /* offset of the vertical accent line into the left gutter: exactly one cell */
+  --gutter-line: var(--cell);
   --col: 780px;
 }
 [data-theme="dark"]{
@@ -105,11 +105,11 @@ main.post:has(.col.page-end) > article{ flex:1 0 auto; display:flex; flex-direct
 .col.page-end::before{ bottom:0; }
 
 /* notebook masthead */
-header.entry{ padding:32px 0 32px; }
+header.entry{ padding:var(--cell) 0 var(--cell); }
 header.entry:has(h1.lead){ padding-bottom:8px; }
 h1.title{ font-family:var(--serif); font-weight:600; font-size:clamp(34px,5vw,48px); line-height:1.05; letter-spacing:-0.02em; margin:0 0 20px; text-wrap:balance; }
 h1.title.lead{ font-weight:500; font-size:clamp(22px,2.6vw,28px); line-height:1.2; letter-spacing:-0.005em; }
-.deck{ font-size:21px; line-height:1.5; color:var(--muted); margin:0 0 30px; text-wrap:pretty; }
+.deck{ font-size:21px; color:var(--muted); margin:0 0 var(--cell); text-wrap:pretty; }
 .kicker{ margin:0 0 18px; display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:6px 24px; }
 .crumb{ font-family:var(--mono); font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0; }
 .crumb a{ color:var(--muted); text-decoration:none; transition:color .2s; }
@@ -119,36 +119,44 @@ h1.title.lead{ font-weight:500; font-size:clamp(22px,2.6vw,28px); line-height:1.
 .byline{ font-family:var(--mono); font-size:12px; color:var(--muted); margin:0; }
 .byline time{ color:var(--muted); }
 
-article p{ margin:0 0 22px; text-wrap:pretty; }
+/* Tier-1 rhythm: prose line boxes are exactly one cell tall, so every text line
+   has the same relationship to the ruled background. The length (not a ratio)
+   inherits through the flow; elements with their own metrics override it. */
+article{ line-height:var(--cell); }
+article p{ margin:0 0 var(--cell); text-wrap:pretty; }
+article :is(ul,ol){ margin:0 0 var(--cell); }
+article :is(ul,ol) :is(ul,ol){ margin-bottom:0; }
 
-article h2{ font-family:var(--sans); font-weight:600; font-size:24px; letter-spacing:-0.01em; line-height:1.2; margin:56px 0 18px; scroll-margin-top:80px; padding-bottom:10px; border-bottom:1px solid var(--rule); }
-article h3{ font-family:var(--sans); font-weight:600; font-size:20px; margin:32px 0 12px; }
+/* heading blocks total whole cells: h2 = 60 + 30 + 10 + 1 + 19 = 3 cells,
+   h3 = 45 + 30 + 15 = 3 cells */
+article h2{ font-family:var(--sans); font-weight:600; font-size:24px; letter-spacing:-0.01em; line-height:var(--cell); margin:calc(var(--cell) * 2) 0 19px; scroll-margin-top:80px; padding-bottom:10px; border-bottom:1px solid var(--rule); }
+article h3{ font-family:var(--sans); font-weight:600; font-size:20px; margin:calc(var(--cell) * 1.5) 0 calc(var(--cell) / 2); }
 .prose a{ color:var(--accent); text-decoration:none; border-bottom:1px solid color-mix(in oklch,var(--accent) 40%,transparent); } .prose a:hover{ border-bottom-color:var(--accent); }
 strong{ font-weight:600; }
 code{ font-family:var(--mono); font-size:0.82em; background:var(--card); padding:2px 6px; border:1px solid var(--hairline); border-radius:3px; color:var(--accent-strong); }
 
 /* corner-ticked figures */
-figure.fig{ margin:32px 0; }
+figure.fig{ margin:var(--cell) 0; }
 figure.fig img{ display:block; width:100%; height:auto; border:1px solid var(--rule); background:var(--paper); }
 figcaption{ font-family:var(--mono); font-size:13px; color:color-mix(in oklch,var(--ink) 62%,var(--muted)); line-height:1.5; margin:12px auto 0; max-width:60ch; text-align:center; text-wrap:balance; }
 figcaption b{ color:var(--accent); font-weight:500; }
 figcaption b::after{ content:" "; }
 
-.callout{ margin:32px 0; border:1px solid var(--accent); background:var(--accent-wash); padding:0; }
+.callout{ margin:var(--cell) 0; border:1px solid var(--accent); background:var(--accent-wash); padding:0; }
 .callout .ctag{ font-family:var(--mono); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent-strong); padding:8px 18px; border-bottom:1px solid var(--accent); display:block; }
 [data-theme="dark"] .callout .ctag{ color:var(--accent); }
 .callout .cbody{ padding:18px 22px; font-style:italic; font-size:19px; color:var(--ink); }
 .callout .src{ display:block; font-style:normal; font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:12px; }
 
-.tbl-wrap{ margin:32px 0; overflow-x:auto; border:1px solid var(--rule); }
-table{ border-collapse:collapse; width:100%; font-size:15px; }
+.tbl-wrap{ margin:var(--cell) 0; overflow-x:auto; border:1px solid var(--rule); }
+table{ border-collapse:collapse; width:100%; font-size:15px; line-height:1.6; }
 caption{ font-family:var(--mono); font-size:11px; color:var(--muted); text-align:left; padding:10px 16px; background:var(--card); border-bottom:1px solid var(--rule); letter-spacing:0.05em; text-transform:uppercase; }
 th,td{ text-align:left; padding:10px 16px; border-bottom:1px solid var(--hairline); }
 th{ font-family:var(--mono); font-size:11.5px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:var(--muted); background:var(--card); }
 td{ font-family:var(--mono); font-size:13px; } tbody tr:last-child td{ border-bottom:none; } tbody tr:hover{ background:var(--card); }
 td.num,th.num{ text-align:right; }
 
-.pager{ display:grid; grid-template-columns:1fr 1fr; gap:0; margin:56px 0 0; padding:0 0 100px; }
+.pager{ display:grid; grid-template-columns:1fr 1fr; gap:0; margin:calc(var(--cell) * 2) 0 0; padding:0 0 calc(var(--cell) * 3); }
 .pager a{ text-decoration:none; color:var(--ink); padding:22px 0; transition:color .2s; } .pager a:hover{ color:var(--accent); }
 .pager .next{ text-align:right; padding-left:20px; } .pager .prev{ padding-right:20px; }
 .pager .lbl{ font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:0.04em; }
@@ -163,7 +171,7 @@ td.num,th.num{ text-align:right; }
   .nav{ gap:0; }
   .nav a{ padding:12px 9px; font-size:12px; }
   .toggle{ margin-left:4px; }
-  header.entry{ padding-top:24px; }
+  header.entry{ padding-top:calc(var(--cell) / 2); }
   .pager{ grid-template-columns:1fr; } .pager .prev{ padding-right:0; } .pager .next{ text-align:left; padding-left:0; }
 }
 
@@ -173,7 +181,7 @@ td.num,th.num{ text-align:right; }
 /* extend the underline left so it meets the vertical margin line (only when that line is shown) */
 @media (min-width:1081px){ .stream-h{ margin-left:calc(-1 * var(--gutter-line)); padding-left:var(--gutter-line); } }
 .stream{ list-style:none; margin:0; padding:0; }
-.stream-item{ position:relative; display:grid; grid-template-columns:calc(var(--cell) * 9) 1fr; gap:32px; padding:calc(var(--cell) / 2) 0 calc(var(--cell) * 1.5); align-items:start; min-height:calc(var(--cell) * 10); cursor:pointer; }
+.stream-item{ position:relative; display:grid; grid-template-columns:calc(var(--cell) * 7) 1fr; gap:var(--cell); padding:calc(var(--cell) / 2) 0 calc(var(--cell) * 1.5); align-items:start; min-height:calc(var(--cell) * 8); cursor:pointer; }
 /* hover affordance is hand-drawn rough-notation brackets (see index.astro) */
 /* stretched link: clicking anywhere on the post box opens the post. the overlay
    resolves against the .stream-item (its nearest positioned ancestor), so .body
@@ -186,21 +194,21 @@ td.num,th.num{ text-align:right; }
 .stream-item a.media{ z-index:3; }
 /* wide screens: float the media out into the left gutter, one grid column left
    of the margin line; text body keeps the column. pull distance = panel width
-   (9 cells) + one cell of clearance + the accent-line offset. */
+   (7 cells) + one cell of clearance + the accent-line offset. */
 @media (min-width:1320px){
   .stream-item{
-    grid-template-columns:calc(var(--cell) * 9) 1fr;
+    grid-template-columns:calc(var(--cell) * 7) 1fr;
     column-gap:calc(var(--cell) + var(--gutter-line));
-    width:calc(100% + var(--cell) * 10 + var(--gutter-line));
-    margin-left:calc(-1 * (var(--cell) * 10 + var(--gutter-line)));
+    width:calc(100% + var(--cell) * 8 + var(--gutter-line));
+    margin-left:calc(-1 * (var(--cell) * 8 + var(--gutter-line)));
   }
 }
 
 /* uniform media / widget panel: a plain framed surface; its contents (Placeholder,
-   Glider, …) paint themselves. fixed at 9x8 grid cells. pulled up by the item's
+   Glider, …) paint themselves. fixed at 7x6 grid cells. pulled up by the item's
    own top padding so its top edge lands on a grid line, independent of the
    text column which keeps its normal top padding. */
-.media{ width:calc(var(--cell) * 9); height:calc(var(--cell) * 8); margin-top:calc(var(--cell) / -2); position:relative; display:grid; place-items:center; overflow:hidden; border:1px solid var(--rule); text-decoration:none; background:var(--paper); transition:border-color .2s; }
+.media{ width:calc(var(--cell) * 7); height:calc(var(--cell) * 6); margin-top:calc(var(--cell) / -2); position:relative; display:grid; place-items:center; overflow:hidden; border:1px solid var(--rule); text-decoration:none; background:var(--paper); transition:border-color .2s; }
 .stream-item:hover .media{ border-color:var(--faint); }
 
 .body .meta{ font-family:var(--mono); font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:0 0 12px; }
@@ -211,7 +219,7 @@ td.num,th.num{ text-align:right; }
 .body h2 a{ color:var(--ink); text-decoration:none; transition:color .2s; }
 .body h2 a:hover{ color:var(--accent); }
 .body p{ font-size:17px; color:var(--muted); line-height:1.5; margin:0; }
-.page-end{ padding-bottom:100px; }
+.page-end{ padding-bottom:calc(var(--cell) * 3); }
 .archive-pager{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin:8px 0 0; padding:22px 0 0; border-top:1px solid var(--rule); font-family:var(--mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; }
 .archive-pager a,.archive-pager span{ color:var(--accent); text-decoration:none; }
 .archive-pager a{ transition:color .2s; }
@@ -221,7 +229,7 @@ td.num,th.num{ text-align:right; }
 .archive-pager [aria-disabled="true"]{ color:var(--faint); }
 
 /* Post details — table of contents (inline, narrow screens) */
-.toc{ margin:14px 0 46px; border:1px solid var(--rule); }
+.toc{ margin:calc(var(--cell) / 2) 0 calc(var(--cell) * 1.5); border:1px solid var(--rule); }
 .toc .th{ font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin:0; padding:11px 18px; border-bottom:1px solid var(--rule); background:var(--card); }
 .toc ol{ margin:0; padding:8px 0; list-style:none; counter-reset:toc; }
 .toc li{ counter-increment:toc; }
@@ -249,7 +257,7 @@ td.num,th.num{ text-align:right; }
   .post.has-toc .toc a:hover{ background:none; color:var(--ink); }
   .post.has-toc .toc a.cur{ color:var(--accent); border-left-color:var(--accent); font-weight:500; }
 }
-figure.code{ margin:32px 0; }
+figure.code{ margin:var(--cell) 0; }
 .code-shell{ background:var(--code-bg); border:1px solid var(--rule); overflow:hidden; }
 .code-bar{ display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid oklch(1 0 0 / 0.08); font-family:var(--mono); font-size:12px; color:color-mix(in oklch, var(--code) 75%, transparent); }
 .code-bar .dotgrp{ display:flex; gap:6px; }
@@ -266,7 +274,7 @@ pre code{ background:none; border:none; border-radius:0; padding:0; font-size:in
 pre .kw{ color:var(--code-keyword); } pre .str{ color:var(--code-string); } pre .com{ color:color-mix(in oklch, var(--code) 55%, transparent); font-style:italic; }
 
 @media (max-width:760px){
-  .stream-item{ grid-template-columns:1fr; gap:18px; }
+  .stream-item{ grid-template-columns:1fr; gap:calc(var(--cell) / 2); }
   .media{ margin:0 auto; }
   .archive-pager{ grid-template-columns:1fr 1fr; gap:10px 16px; }
   .archive-pager .count{ grid-column:1 / -1; grid-row:1; justify-self:start; }
