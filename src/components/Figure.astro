@@ -5,12 +5,168 @@ interface Props {
 	src: ImageMetadata;
 	alt: string;
 	caption?: string;
+	/* invert the image's colors in dark theme (for white-background diagrams) */
+	invert?: boolean;
 }
 
-const { src, alt, caption } = Astro.props;
+const { src, alt, caption, invert } = Astro.props;
 ---
 
-<figure class="fig">
+<figure class:list={["fig", { "fig--invert": invert }]}>
 	<Image src={src} alt={alt} />
 	{caption && <figcaption>{caption}</figcaption>}
 </figure>
+
+<style is:global>
+	/* click-to-zoom affordance on figure images */
+	figure.fig img { cursor: zoom-in; }
+
+	/* invert white-background diagrams in dark theme only (light keeps original) */
+	[data-theme="dark"] figure.fig.fig--invert img,
+	[data-theme="dark"] .fig-lightbox__img.is-invert { filter: invert(1); }
+
+	.fig-lightbox {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: grid;
+		place-items: center;
+		padding: 4vmin;
+		cursor: zoom-out;
+		/* the page background itself (the --paper the grid is drawn over), so the
+		   maximized figure sits on the same surface as inline — near-white in
+		   light, charcoal in dark — and the transparent figure blends into it */
+		background: var(--paper);
+	}
+	.fig-lightbox[hidden] { display: none; }
+
+	.fig-lightbox__fig {
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 14px;
+		max-width: 95vw;
+		max-height: 92vh;
+	}
+
+	.fig-lightbox__img {
+		max-width: 95vw;
+		max-height: 82vh;
+		width: auto;
+		height: auto;      /* never upscale past the asset's own pixels */
+		cursor: zoom-out;  /* click the image to close, too */
+		/* transparent card -> the figure blends into the scrim (same in both
+		   themes); the plot's own transparent PNG reads on the dark backdrop */
+		background: transparent;
+		border: none;
+	}
+
+	.fig-lightbox__cap {
+		margin: 0;
+		max-width: 70ch;
+		font-family: var(--mono);
+		font-size: 13px;
+		line-height: 1.5;
+		text-align: center;
+		text-wrap: balance;
+		/* same as the inline figcaption — reads on --paper in both themes */
+		color: color-mix(in oklch, var(--ink) 62%, var(--muted));
+	}
+	.fig-lightbox__cap:empty { display: none; }
+	.fig-lightbox__cap b { color: var(--accent); font-weight: 500; }
+
+	.fig-lightbox__close {
+		position: fixed;
+		top: 20px;
+		right: 20px;
+		width: 40px;
+		height: 40px;
+		display: grid;
+		place-items: center;
+		font-size: 24px;
+		line-height: 1;
+		cursor: pointer;
+		color: var(--muted);
+		background: var(--card);   /* one step off --paper so it reads on the backdrop */
+		border: 1px solid var(--rule);
+		transition: color .2s, border-color .2s;
+	}
+	.fig-lightbox__close:hover { color: var(--ink); border-color: var(--faint); }
+
+	@media (prefers-reduced-motion: no-preference) {
+		.fig-lightbox { animation: fig-lightbox-in .15s ease-out; }
+	}
+	@keyframes fig-lightbox-in { from { opacity: 0; } to { opacity: 1; } }
+</style>
+
+<script>
+	// Lightbox for figures: click an image to maximize it; close with the X
+	// button, the Esc key, or a click on the backdrop. Bundled once by Astro,
+	// and guarded so it only ever initializes a single shared overlay.
+	(() => {
+		const w = window as unknown as { __figLightbox?: boolean };
+		if (w.__figLightbox) return;
+		w.__figLightbox = true;
+
+		const init = () => {
+			const overlay = document.createElement('div');
+			overlay.className = 'fig-lightbox';
+			overlay.setAttribute('role', 'dialog');
+			overlay.setAttribute('aria-modal', 'true');
+			overlay.hidden = true;
+			overlay.innerHTML =
+				'<button class="fig-lightbox__close" type="button" aria-label="Close">×</button>' +
+				'<figure class="fig-lightbox__fig">' +
+				'<img class="fig-lightbox__img" alt="" />' +
+				'<figcaption class="fig-lightbox__cap"></figcaption>' +
+				'</figure>';
+			document.body.appendChild(overlay);
+
+			const big = overlay.querySelector('.fig-lightbox__img') as HTMLImageElement;
+			const cap = overlay.querySelector('.fig-lightbox__cap') as HTMLElement;
+			const closeBtn = overlay.querySelector('.fig-lightbox__close') as HTMLButtonElement;
+			const root = document.documentElement;
+			let lastFocus: HTMLElement | null = null;
+
+			const open = (img: HTMLImageElement) => {
+				lastFocus = document.activeElement as HTMLElement;
+				big.src = img.currentSrc || img.src;
+				big.alt = img.alt || '';
+				const srcFig = img.closest('figure.fig');
+				const srcCap = srcFig?.querySelector('figcaption');
+				cap.innerHTML = srcCap ? srcCap.innerHTML : '';
+				big.classList.toggle('is-invert', !!srcFig?.classList.contains('fig--invert'));
+				overlay.hidden = false;
+				root.style.overflow = 'hidden';
+				document.body.style.overflow = 'hidden';
+				closeBtn.focus();
+			};
+			const close = () => {
+				if (overlay.hidden) return;
+				overlay.hidden = true;
+				big.removeAttribute('src');
+				root.style.overflow = '';
+				document.body.style.overflow = '';
+				if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+			};
+
+			document.addEventListener('click', (e) => {
+				const t = e.target as HTMLElement;
+				const img = t.closest?.('figure.fig img') as HTMLImageElement | null;
+				if (img) open(img);
+			});
+			// close on any click inside the overlay (backdrop, image, or the X)
+			overlay.addEventListener('click', () => close());
+			document.addEventListener('keydown', (e) => {
+				if (e.key === 'Escape') close();
+			});
+		};
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', init);
+		} else {
+			init();
+		}
+	})();
+</script>

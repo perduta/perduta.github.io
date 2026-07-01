@@ -1,6 +1,6 @@
 ---
-title: "BlueDot Technical AI Safety Puzzle #1 - Submission"
-description: "A walkthrough of how a frozen MiniLM head represents the country feature nonlinearly at layer L: a dartboard of radius and angle, the ReLU that deletes the linear copy, and a weirder locker-code representation trained on top."
+title: "How does a neural network represents it's features?"
+description: "Walkthrough of my approach to the BlueDot Technical AI Safety Puzzle #1"
 date: 2026-06-15
 topic: "interpretability"
 ---
@@ -23,15 +23,15 @@ import reluFlow from '../../assets/posts/bluedot/relu-flow.png';
 import lockerActivations from '../../assets/posts/bluedot/locker-activations.png';
 import probesCountry from '../../assets/posts/bluedot/probes-country.png';
 
-Full experiment code: [tasks 1 and 2](https://colab.research.google.com/drive/1TfT6pfXYrE65Ym9pzT6Kr0-lw5VUtbfg?usp=sharing) · [task 3](https://colab.research.google.com/drive/1ywNW0aYQM8l1O02X1KSm_JcFhM6HNovQ?usp=sharing) · [trained model](https://drive.google.com/file/d/1ZKXE_C6OjDutF6Y1ZVyZJ5Z5WUxWTKt3/view?usp=sharing) (also available in task 3)
+*Full experiment code from this post is available here: [tasks 1 and 2](https://colab.research.google.com/drive/1TfT6pfXYrE65Ym9pzT6Kr0-lw5VUtbfg?usp=sharing) · [task 3](https://colab.research.google.com/drive/1ywNW0aYQM8l1O02X1KSm_JcFhM6HNovQ?usp=sharing) · [trained model](https://drive.google.com/file/d/1ZKXE_C6OjDutF6Y1ZVyZJ5Z5WUxWTKt3/view?usp=sharing)*
 
-About me: I have been coding my entire life, I've never finished college (or high school for that matter). I trained a "few" deep-learning models over a 10-year career as a backend developer and am now transitioning full time into AI safety research. Some of my approaches may look stupid or unnecessarily complex/trivial to someone who knows more math and/or ML theory and doesn't need to run an experiment to know how it will end, it is what it is. This puzzle was a lot of fun, thank you for creating it! Special thanks to Zuzanna Matuszewska from AI Safety Poland for showing me the puzzle and pushing me to give it a try.
+## BlueDot Puzzle
 
-## Short description of the puzzle
+Below is a slight rewrite of my submission to the [BlueDot Puzzle](http://bluedot.org/puzzles/technical-ai-safety) that Zuzanna Matuszewska from AI Safety Poland encouraged me to give it a try.
 
-Model is a frozen MiniLM sentence encoder (a pre-trained model that turns a written sentence into a list of numbers) followed by a small trained head that predicts eight yes/no features of each sentence (country, food, sentiment, and five others that do not matter for the sake of the puzzle).
+In the puzzle, we're given a model that is a frozen MiniLM sentence encoder (a pre-trained model that turns a written sentence into a list of numbers) followed by a small trained head that predicts eight yes/no features of each sentence (country, food, sentiment, and five others that do not matter for the sake of the puzzle).
 
-<Figure src={architecturePipeline} alt="Diagram of the model: input text goes through a sentence-transformers all-MiniLM-L6-v2 text encoder with mean pooling to a 384-dim vector, then an MLP head of linear+ReLU layers, ending in 8 independent binary predictions. Layer L is marked as the non-linear representations found here." caption="layer L is the post-ReLU output of hidden 2, marked in the diagram as &quot;non-linear representations found here&quot;" />
+<Figure src={architecturePipeline} invert alt="Diagram of the model: input text goes through a sentence-transformers all-MiniLM-L6-v2 text encoder with mean pooling to a 384-dim vector, then an MLP head of linear+ReLU layers, ending in 8 independent binary predictions. Layer L is marked as the non-linear representations found here." caption="layer L is the post-ReLU output of hidden 2, marked in the diagram as &quot;non-linear representations found here&quot;" />
 
 At layer L each sentence has been turned into a list of 64 numbers, so each sentence is a single point in a 64-dimensional space. Inside this space, seven of the features are linear (can be predicted by linear regression) and one is not. The goal is to find the one that is not and explain how it is represented in the output of layer L. If we were 64-dimensional beings, we could simply look at the shape each feature makes. Well I can't, because 64 is slightly more than 3 (which I am barely comfortable with), so most of the solution is about building a plot we can look at and think about.
 

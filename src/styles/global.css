@@ -126,7 +126,7 @@ figure.fig img{ display:block; width:100%; height:auto; border:1px solid var(--r
 .ph::before{ top:8px; left:8px; border-right:none; border-bottom:none; }
 .ph::after{ bottom:8px; right:8px; border-left:none; border-top:none; }
 .ph span{ font-family:var(--mono); font-size:12px; color:var(--muted); background:var(--paper); padding:6px 12px; border:1px solid var(--hairline); }
-figcaption{ font-family:var(--mono); font-size:12.5px; color:var(--muted); line-height:1.5; margin-top:12px; max-width:60ch; }
+figcaption{ font-family:var(--mono); font-size:13px; color:color-mix(in oklch,var(--ink) 62%,var(--muted)); line-height:1.5; margin:12px auto 0; max-width:60ch; text-align:center; text-wrap:balance; }
 figcaption b{ color:var(--accent); font-weight:500; }
 figcaption b::after{ content:" "; }
 
