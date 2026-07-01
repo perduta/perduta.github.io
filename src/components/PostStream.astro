@@ -59,6 +59,11 @@ const widgets: Record<string, any> = { glider: Glider, sampler: IsometricSampler
 
 	let svg = null;
 
+	// the notebook lattice cell, from CSS — never hardcode the rhythm number
+	function cellSize() {
+		return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell')) || 24;
+	}
+
 	function resolvedAccent() {
 		const probe = document.createElement('span');
 		probe.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
@@ -149,8 +154,9 @@ const widgets: Record<string, any> = { glider: Glider, sampler: IsometricSampler
 		const h = document.querySelector('.stream-h');
 		if (!col || !h) return;
 		col.style.paddingTop = '0px';
+		const cell = cellSize();
 		const bottom = h.getBoundingClientRect().bottom + window.scrollY;
-		const target = Math.ceil(bottom / 24) * 24;
+		const target = Math.ceil(bottom / cell) * cell;
 		col.style.paddingTop = (target - bottom) + 'px';
 	}
 
@@ -174,7 +180,7 @@ const widgets: Record<string, any> = { glider: Glider, sampler: IsometricSampler
 	// per-stage CSS transitions, so there are no timing gaps or easing seams
 	// between the segments.
 	function buildBracket(item) {
-		const cell = 24, gap = 24, tick = 12;
+		const cell = cellSize(), gap = cell, tick = cell / 2;
 		const ir = item.getBoundingClientRect();
 		const media = item.querySelector('.media');
 		const mr = media ? media.getBoundingClientRect() : ir;

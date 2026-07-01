@@ -13,9 +13,13 @@
 </style>
 
 <script>
-	const CELL = 12;     // half the 24px page background grid — twice as dense
 	const STEP_MS = 380; // resting cadence
 	const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+	// half the page background lattice cell (from CSS) — twice as dense
+	function gliderCell() {
+		return (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell')) || 24) / 2;
+	}
 
 	// moving the mouse kicks the glider to 4x speed; once it stops, speed eases
 	// back down to 1x over BOOST_DECAY_MS.
@@ -61,6 +65,7 @@
 
 	function setup(canvas) {
 		const ctx = canvas.getContext('2d');
+		const CELL = gliderCell();
 		let cols = 1, rows = 1;   // recomputed from the panel size
 		let flight = 0;
 		let live = new Set();
