@@ -1,5 +1,6 @@
 ---
 import Glider from './Glider.astro';
+import IsometricSampler from './IsometricSampler.astro';
 import Placeholder from './Placeholder.astro';
 import type { PostEntry } from '../lib/posts';
 
@@ -15,7 +16,7 @@ const { posts, total, startIndex = 0, showNewPostArrow = false } = Astro.props;
 // Registry of media-panel widgets, keyed by the post's `widget` field. Add a new
 // entry here to make a widget available; any post without a known widget falls
 // back to Placeholder.
-const widgets: Record<string, any> = { glider: Glider };
+const widgets: Record<string, any> = { glider: Glider, sampler: IsometricSampler };
 ---
 
 <div class="stream-h"><span>Log</span><span class="c">{total} {total === 1 ? 'entry' : 'entries'}</span></div>

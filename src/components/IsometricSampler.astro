@@ -1,0 +1,195 @@
+---
+/*
+ * Media-panel widget: a live look-alike of figure (a) from the `isometric-plane`
+ * cell. Blue (country=0) and orange (country=1) dots sampled from a hand-tuned
+ * mixture of Gaussians — 4 tight orange clusters in a central 2x2 grid, 4 diffuse
+ * blue clusters out in the corners. Not the real embeddings; a heuristic that
+ * reproduces the *shape*. Dots stream in over `duration` ms until `count` is
+ * reached, then stop. No axes/legend/title — just the dots. A small gray replay
+ * button appears on hover (top-right).
+ */
+interface Props {
+	count?: number;    // total dots to sample
+	duration?: number; // ms to reach `count`
+}
+const { count = 2000, duration = 5000 } = Astro.props;
+---
+
+<span class="iso-sampler" data-iso-sampler data-count={count} data-duration={duration}>
+	<canvas class="iso-sampler__canvas" aria-hidden="true"></canvas>
+	<button class="iso-sampler__replay" type="button" aria-label="Replay sampling" title="Replay">
+		<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
+			stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+			<path d="M21 12a9 9 0 1 1-2.64-6.36" />
+			<path d="M21 3v6h-6" />
+		</svg>
+	</button>
+</span>
+
+<style>
+	.iso-sampler { position: absolute; inset: 0; overflow: hidden; }
+	.iso-sampler__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+	.iso-sampler__replay {
+		position: absolute;
+		top: 6px;
+		right: 6px;
+		width: 26px;
+		height: 26px;
+		display: grid;
+		place-items: center;
+		padding: 0;
+		cursor: pointer;
+		color: var(--muted);
+		background: color-mix(in oklch, var(--card) 82%, transparent);
+		border: 1px solid var(--rule);
+		border-radius: 6px;
+		opacity: 0;
+		transition: opacity .18s ease, color .18s ease, border-color .18s ease;
+	}
+	/* reveal on hover of the panel (this element fills it), or on keyboard focus */
+	.iso-sampler:hover .iso-sampler__replay,
+	.iso-sampler__replay:focus-visible { opacity: 1; }
+	.iso-sampler__replay:hover { color: var(--ink); border-color: var(--faint); }
+</style>
+
+<script>
+	// Self-contained sampler; initializes every [data-iso-sampler] on the page.
+	(() => {
+		const w = window as unknown as { __isoSampler?: boolean };
+		if (w.__isoSampler) return;
+		w.__isoSampler = true;
+
+		const BLUE = '#1f77b4';   // tab:blue  (country=0)
+		const ORANGE = '#ff7f0e'; // tab:orange (country=1)
+
+		// view extent (data coords) — matches the cropped figure
+		const X_LO = -3.1, X_HI = 3.3, Y_LO = -1.95, Y_HI = 1.85;
+
+		// mixture components: [cx, cy, sMajor, sMinor, angleRad, weight, color]
+		// orange = 4 tight central blobs; blue = 4 wide, tilted corner blobs
+		const CLUSTERS: [number, number, number, number, number, number, string][] = [
+			// orange 2x2 near the origin
+			[-0.40,  0.30, 0.12, 0.11,  0.0, 0.11, ORANGE],
+			[ 0.40,  0.27, 0.12, 0.11,  0.0, 0.11, ORANGE],
+			[-0.42, -0.33, 0.13, 0.11,  0.0, 0.11, ORANGE],
+			[ 0.30, -0.32, 0.13, 0.11,  0.0, 0.11, ORANGE],
+			// blue diffuse corners (tilted to echo the diagonal streaks)
+			[-0.85,  0.95, 0.34, 0.24, -0.5, 0.13, BLUE],
+			[ 2.05,  0.85, 0.42, 0.33, -0.5, 0.15, BLUE],
+			[-1.70, -0.65, 0.40, 0.28,  0.5, 0.13, BLUE],
+			[ 1.15, -0.90, 0.46, 0.34, -0.4, 0.15, BLUE],
+		];
+		const WSUM = CLUSTERS.reduce((a, c) => a + c[5], 0);
+
+		// standard normal (Box-Muller)
+		let spare: number | null = null;
+		const gauss = (): number => {
+			if (spare !== null) { const s = spare; spare = null; return s; }
+			let u = 0, v = 0, s = 0;
+			do { u = Math.random() * 2 - 1; v = Math.random() * 2 - 1; s = u * u + v * v; }
+			while (s >= 1 || s === 0);
+			const m = Math.sqrt(-2 * Math.log(s) / s);
+			spare = v * m;
+			return u * m;
+		};
+
+		type Dot = { x: number; y: number; color: string };
+		const makeSamples = (n: number): Dot[] => {
+			const out: Dot[] = [];
+			for (let i = 0; i < n; i++) {
+				let r = Math.random() * WSUM, k = 0;
+				while (k < CLUSTERS.length - 1 && (r -= CLUSTERS[k][5]) > 0) k++;
+				const [cx, cy, sMaj, sMin, ang, , color] = CLUSTERS[k];
+				const a = gauss() * sMaj, b = gauss() * sMin;
+				const c = Math.cos(ang), s = Math.sin(ang);
+				out.push({ x: cx + a * c - b * s, y: cy + a * s + b * c, color });
+			}
+			return out;
+		};
+
+		const initOne = (el: HTMLElement) => {
+			const canvas = el.querySelector('.iso-sampler__canvas') as HTMLCanvasElement;
+			const replay = el.querySelector('.iso-sampler__replay') as HTMLButtonElement;
+			const ctx = canvas.getContext('2d')!;
+			const count = parseInt(el.dataset.count || '2000', 10);
+			const duration = parseInt(el.dataset.duration || '5000', 10);
+			const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+			let dots: Dot[] = [];
+			let drawn = 0;          // dots already painted onto the canvas
+			let start = 0;
+			let raf = 0;
+			let W = 0, H = 0;
+			// cover-fit transform (preserve aspect, fill the panel, crop overflow)
+			let scale = 1, ox = 0, oy = 0;
+
+			const drawRange = (from: number, to: number) => {
+				ctx.globalAlpha = 0.38;
+				for (let i = from; i < to; i++) {
+					const d = dots[i];
+					const px = ox + (d.x - X_LO) * scale;
+					const py = H - (oy + (d.y - Y_LO) * scale);
+					ctx.fillStyle = d.color;
+					ctx.beginPath();
+					ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+					ctx.fill();
+				}
+			};
+
+			const clear = () => ctx.clearRect(0, 0, W, H);
+
+			const resize = () => {
+				const dpr = Math.min(window.devicePixelRatio || 1, 2);
+				const rect = el.getBoundingClientRect();
+				W = rect.width; H = rect.height;
+				if (!W || !H) return;
+				canvas.width = Math.round(W * dpr);
+				canvas.height = Math.round(H * dpr);
+				ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+				const dataW = X_HI - X_LO, dataH = Y_HI - Y_LO;
+				scale = Math.max(W / dataW, H / dataH);      // cover
+				ox = (W - dataW * scale) / 2;
+				oy = (H - dataH * scale) / 2;
+				clear();
+				drawRange(0, drawn); // repaint whatever is currently revealed
+			};
+
+			const tick = (t: number) => {
+				if (!start) start = t;
+				const elapsed = t - start;
+				const target = Math.min(count, Math.floor((elapsed / duration) * count));
+				if (target > drawn) { drawRange(drawn, target); drawn = target; }
+				if (drawn < count) raf = requestAnimationFrame(tick);
+			};
+
+			const run = () => {
+				cancelAnimationFrame(raf);
+				dots = makeSamples(count);
+				drawn = 0; start = 0;
+				clear();
+				if (reduced) { drawRange(0, count); drawn = count; }
+				else raf = requestAnimationFrame(tick);
+			};
+
+			resize();
+			run();
+
+			// the panel is wrapped in a post link; keep the button from navigating
+			replay.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); run(); });
+			let rt = 0;
+			window.addEventListener('resize', () => {
+				clearTimeout(rt);
+				rt = window.setTimeout(resize, 120);
+			});
+		};
+
+		const init = () => {
+			document.querySelectorAll<HTMLElement>('[data-iso-sampler]').forEach(initOne);
+		};
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', init);
+		} else {
+			init();
+		}
+	})();
+</script>

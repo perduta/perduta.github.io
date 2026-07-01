@@ -1,8 +1,9 @@
 ---
-title: "How does a neural network represents it's features?"
+title: "How does a neural network represent its features?"
 description: "Walkthrough of my approach to the BlueDot Technical AI Safety Puzzle #1"
 date: 2026-06-15
 topic: "interpretability"
+widget: "sampler"
 ---
 import Figure from '../../components/Figure.astro';
 
@@ -27,7 +28,7 @@ import probesCountry from '../../assets/posts/bluedot/probes-country.png';
 
 ## BlueDot Puzzle
 
-Below is a slight rewrite of my submission to the [BlueDot Puzzle](http://bluedot.org/puzzles/technical-ai-safety) that Zuzanna Matuszewska from AI Safety Poland encouraged me to give it a try.
+Below is a slight rewrite of my submission to the [BlueDot Puzzle](https://bluedot.org/puzzles/technical-ai-safety). Zuzanna Matuszewska from AI Safety Poland encouraged me to give it a try and I'm glad that I did, it was really fun!
 
 In the puzzle, we're given a model that is a frozen MiniLM sentence encoder (a pre-trained model that turns a written sentence into a list of numbers) followed by a small trained head that predicts eight yes/no features of each sentence (country, food, sentiment, and five others that do not matter for the sake of the puzzle).
 
