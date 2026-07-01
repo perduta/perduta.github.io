@@ -39,7 +39,6 @@ const widgets: Record<string, any> = { glider: Glider };
 					</div>
 					<h2><a href={href}>{post.data.title}</a></h2>
 					<p>{post.data.description}</p>
-					<a class="more" href={href}>read <span aria-hidden="true">&rarr;</span></a>
 				</div>
 			</li>
 		);
@@ -178,7 +177,7 @@ const widgets: Record<string, any> = { glider: Glider };
 	document.querySelectorAll('.stream-item').forEach((item) => {
 		let ann = null;
 		item.addEventListener('pointerenter', () => {
-			if (ann) return;
+			if (ann || window.innerWidth <= 760) return;
 			const cell = 24;
 			const ir = item.getBoundingClientRect();
 			const media = item.querySelector('.media');
