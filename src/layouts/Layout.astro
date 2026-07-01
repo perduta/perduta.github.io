@@ -130,6 +130,95 @@ const onAbout = path.startsWith('/about');
 				});
 			});
 
+			// Tier-2 rhythm snap (see --cell/--rhythm-phase in global.css): blocks with
+			// arbitrary heights — the masthead, inline TOC, figures, code shells,
+			// tables, callouts — de-phase the prose that follows them. For each one,
+			// nudge its own top margin so its border sits exactly on a lattice rule,
+			// and its bottom margin so the following flow re-enters the grid at
+			// --rhythm-phase (line-box tops 7px past a rule = rules under baselines).
+			// Margin collapsing makes one-shot arithmetic unreliable, so measure and
+			// correct until the target holds. Gated to pages with a .prose flow; the
+			// index has its own snap in PostStream.
+			const prose = document.querySelector('main.post article .prose');
+			if (prose) {
+				const rootStyle = () => getComputedStyle(document.documentElement);
+				const cellSize = () => parseFloat(rootStyle().getPropertyValue('--cell')) || 24;
+				const phase = () => parseFloat(rootStyle().getPropertyValue('--rhythm-phase')) || 0;
+				const BOXY = 'header.entry, .toc, figure.fig, figure.code, .tbl-wrap, .callout, pre';
+				const inFlow = (el: HTMLElement) =>
+					el.offsetParent !== null && getComputedStyle(el).position !== 'fixed';
+
+				const nudge = (
+					el: HTMLElement,
+					side: 'marginTop' | 'marginBottom',
+					measure: () => number | null,
+					target: number,
+					cell: number,
+				) => {
+					for (let i = 0; i < 4; i++) {
+						const y = measure();
+						if (y == null) return;
+						const rem = (target - (y % cell) + cell * 2) % cell;
+						if (rem < 0.5 || rem > cell - 0.5) return;
+						const cur = parseFloat(getComputedStyle(el)[side]) || 0;
+						el.style[side] = `${cur + rem}px`;
+					}
+				};
+
+				const snap = () => {
+					const cell = cellSize();
+					const blocks = Array.from(
+						document.querySelectorAll<HTMLElement>(`main.post article :is(${BOXY})`),
+					).filter(
+						// skip nested matches (e.g. the pre inside a code shell) — only
+						// blocks that participate in the article flow get snapped
+						(el) => inFlow(el) && !el.parentElement?.closest(BOXY),
+					);
+					blocks.forEach((el) => {
+						el.style.marginTop = '';
+						el.style.marginBottom = '';
+					});
+					blocks.forEach((el) => {
+						// the masthead starts the page; only its bottom boundary matters
+						if (!el.matches('header.entry')) {
+							nudge(el, 'marginTop', () => el.getBoundingClientRect().top + window.scrollY, 0, cell);
+						}
+						const next = el.nextElementSibling as HTMLElement | null;
+						if (!next) return;
+						const targetOffset = next.matches(BOXY) ? 0 : phase();
+						nudge(
+							el,
+							'marginBottom',
+							() => next.getBoundingClientRect().top + window.scrollY,
+							targetOffset,
+							cell,
+						);
+					});
+				};
+
+				let snapTimer = 0;
+				const requestSnap = () => {
+					window.clearTimeout(snapTimer);
+					snapTimer = window.setTimeout(snap, 80);
+				};
+				snap();
+				window.addEventListener('load', requestSnap);
+				window.addEventListener('resize', requestSnap);
+				if (document.fonts?.ready) document.fonts.ready.then(requestSnap);
+			}
+
+			// dev aid: ?rhythm overlays the cell boundaries (line-box targets sit
+			// --rhythm-phase below the red lines)
+			if (new URLSearchParams(location.search).has('rhythm')) {
+				const cell = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell')) || 24;
+				const overlay = document.createElement('div');
+				overlay.style.cssText =
+					'position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:99;' +
+					`height:${document.documentElement.scrollHeight}px;` +
+					`background-image:repeating-linear-gradient(to bottom, rgba(220,40,40,.45) 0 1px, transparent 1px ${cell}px);`;
+				document.body.appendChild(overlay);
+			}
+
 			const tocLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('.toc a'));
 			const sections = Array.from(document.querySelectorAll<HTMLElement>('article h2[id]'));
 			if (tocLinks.length && sections.length) {

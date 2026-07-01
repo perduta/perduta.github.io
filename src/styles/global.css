@@ -36,6 +36,10 @@
      in --cell so the lattice scale is a one-line change. JS reads it via
      getComputedStyle — never hardcode the number. */
   --cell: 30px;
+  /* vertical offset of prose line-box tops within a cell (used by the rhythm
+     snap in Layout.astro): with 19px serif in a 30px box, starting the box 7px
+     below a rule puts the next rule ~2px under the baseline — ruled paper. */
+  --rhythm-phase: 7px;
   /* offset of the vertical accent line into the left gutter: exactly one cell */
   --gutter-line: var(--cell);
   --col: 780px;
