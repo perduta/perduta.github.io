@@ -153,28 +153,17 @@ const widgets: Record<string, any> = { glider: Glider };
 	if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
 	new MutationObserver(drawArrow).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-	const DRAW_MS = 300;
+	const DRAW_MS = 120;
 
-	function bracketPaths(svg) { return svg ? [...svg.querySelectorAll('path')] : []; }
-	function primeHidden(svg) {
-		for (const p of bracketPaths(svg)) {
-			const len = p.getTotalLength();
-			p.style.transition = 'none';
-			p.style.strokeDasharray = String(len);
-			p.style.strokeDashoffset = String(len);
-		}
-	}
-	function drive(svg, draw) {
-		for (const p of bracketPaths(svg)) {
-			const len = p.getTotalLength();
-			p.style.strokeDasharray = String(len);
-			p.style.transition = `stroke-dashoffset ${DRAW_MS}ms ease`;
-			p.style.strokeDashoffset = draw ? '0' : String(len);
-		}
-	}
-
-	// hand-drawn bracket: vertical stroke one grid cell out from the item on each
-	// side, with a short tick (half that gap) at top/bottom pointing back at it.
+	// hand-drawn bracket: a vertical stroke one grid cell out from the item on
+	// each side, with a short tick (half that gap) at top/bottom pointing back at
+	// it. each of the six strokes is its own single-subpath <path> (rough.js's
+	// disableMultiStroke keeps it a single subpath, so stroke-dashoffset reveals
+	// it monotonically along its own arc length). the three strokes per side are
+	// drawn in order — top tick, then line, then bottom tick — by one rAF loop
+	// that walks a single "pen distance" across all three; no setTimeout and no
+	// per-stage CSS transitions, so there are no timing gaps or easing seams
+	// between the segments.
 	function buildBracket(item) {
 		const cell = 24, gap = 24, tick = 12;
 		const ir = item.getBoundingClientRect();
@@ -200,18 +189,63 @@ const widgets: Record<string, any> = { glider: Glider };
 		});
 
 		const rc = rough.svg(bracket);
-		const o = { stroke: resolvedAccent(), strokeWidth: 1.6, roughness: 1.2, bowing: 1 };
+		const o = { stroke: resolvedAccent(), strokeWidth: 1.6, roughness: 1.2, bowing: 1, disableMultiStroke: true };
+		// rc.line() returns a <g> wrapping the <path>; append the inner <path> so
+		// its stroke-dashoffset can be driven directly. each stroke's first point
+		// is the end it should draw FROM.
+		const add = (x1, y1, x2, y2) => {
+			const g = rc.line(x1, y1, x2, y2, o);
+			const p = g.querySelector('path') || g;
+			p._len = p.getTotalLength();
+			p.style.strokeDasharray = String(p._len);
+			p.style.strokeDashoffset = String(p._len);
+			bracket.appendChild(p);
+			return p;
+		};
 
-		bracket.appendChild(rc.line(leftX, topY, leftX, bottomY, o));
-		bracket.appendChild(rc.line(leftX, topY, leftX + tick, topY, o));
-		bracket.appendChild(rc.line(leftX, bottomY, leftX + tick, bottomY, o));
-
-		bracket.appendChild(rc.line(rightX, topY, rightX, bottomY, o));
-		bracket.appendChild(rc.line(rightX, topY, rightX - tick, topY, o));
-		bracket.appendChild(rc.line(rightX, bottomY, rightX - tick, bottomY, o));
+		// order per side: top tick (tip -> line), line (top -> bottom), bottom
+		// tick (line -> tip). stages groups left+right so they draw in lockstep.
+		bracket._stages = [
+			[add(leftX + tick, topY, leftX, topY), add(rightX - tick, topY, rightX, topY)],
+			[add(leftX, topY, leftX, bottomY), add(rightX, topY, rightX, bottomY)],
+			[add(leftX, bottomY, leftX + tick, bottomY), add(rightX, bottomY, rightX - tick, bottomY)],
+		];
+		// stage boundary lengths taken from the left stroke of each stage
+		bracket._segLens = bracket._stages.map((s) => s[0]._len);
 
 		document.body.appendChild(bracket);
 		return bracket;
+	}
+
+	// reveal each stage's strokes by however much "pen distance" has reached them
+	function paintBracket(bracket, penDist) {
+		const [l1, l2] = bracket._segLens;
+		const avail = [penDist, penDist - l1, penDist - l1 - l2];
+		bracket._stages.forEach((paths, i) => {
+			for (const p of paths) {
+				const drawn = Math.max(0, Math.min(avail[i], p._len));
+				p.style.strokeDashoffset = String(p._len - drawn);
+			}
+		});
+	}
+
+	// animate the bracket's pen distance to `target` (total length = draw in, 0 =
+	// retract), continuing from wherever it currently is.
+	function animateBracket(bracket, drawIn) {
+		cancelAnimationFrame(bracket._raf);
+		const total = bracket._segLens.reduce((a, b) => a + b, 0);
+		const from = bracket._pen ?? 0;
+		const to = drawIn ? total : 0;
+		const dur = DRAW_MS * (Math.abs(to - from) / total || 0);
+		const start = performance.now();
+		const frame = (now) => {
+			const t = dur ? Math.min((now - start) / dur, 1) : 1;
+			bracket._pen = from + (to - from) * t;
+			paintBracket(bracket, bracket._pen);
+			if (t < 1) bracket._raf = requestAnimationFrame(frame);
+			else if (!drawIn) bracket.remove();
+		};
+		bracket._raf = requestAnimationFrame(frame);
 	}
 
 	document.querySelectorAll('.stream-item').forEach((item) => {
@@ -219,15 +253,13 @@ const widgets: Record<string, any> = { glider: Glider };
 		item.addEventListener('pointerenter', () => {
 			if (bracket || window.innerWidth <= 760) return;
 			bracket = buildBracket(item);
-			primeHidden(bracket);
-			requestAnimationFrame(() => requestAnimationFrame(() => drive(bracket, true)));
+			bracket._pen = 0;
+			animateBracket(bracket, true);
 		});
 		item.addEventListener('pointerleave', () => {
 			if (!bracket) return;
-			const leaving = bracket;
+			animateBracket(bracket, false);
 			bracket = null;
-			drive(leaving, false);
-			setTimeout(() => leaving.remove(), DRAW_MS);
 		});
 	});
 </script>
