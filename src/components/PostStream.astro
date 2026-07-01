@@ -15,7 +15,9 @@ const { posts, total, startIndex = 0, showNewPostArrow = false } = Astro.props;
 
 // Registry of media-panel widgets, keyed by the post's `widget` field. Add a new
 // entry here to make a widget available; any post without a known widget falls
-// back to Placeholder.
+// back to Placeholder. Widgets render inside a plain <span> panel (not a link) so
+// they may contain their own controls; navigation is handled by the card's
+// stretched link.
 const widgets: Record<string, any> = { glider: Glider, sampler: IsometricSampler };
 ---
 
@@ -28,9 +30,15 @@ const widgets: Record<string, any> = { glider: Glider, sampler: IsometricSampler
 		const Widget = post.data.widget ? widgets[post.data.widget] : null;
 		return (
 			<li class="stream-item">
-				<a class="media" href={href} aria-label={`Read ${post.data.title}`}>
-					{Widget ? <Widget /> : <Placeholder topic={post.data.topic} />}
-				</a>
+				{Widget ? (
+					<span class="media">
+						<Widget />
+					</span>
+				) : (
+					<a class="media" href={href} aria-label={`Read ${post.data.title}`}>
+						<Placeholder topic={post.data.topic} />
+					</a>
+				)}
 				<div class="body">
 					<div class="meta">
 						<span class="idx">#{num}</span>

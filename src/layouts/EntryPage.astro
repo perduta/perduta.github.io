@@ -15,12 +15,13 @@ interface Props {
 	byline?: Byline;
 	contentClass?: string;
 	hasToc?: boolean;
+	handwritingFont?: boolean;
 }
 
-const { title, description, heading, headingClass, deck, byline, contentClass, hasToc } = Astro.props;
+const { title, description, heading, headingClass, deck, byline, contentClass, hasToc, handwritingFont } = Astro.props;
 ---
 
-<Layout title={title} description={description}>
+<Layout title={title} description={description} handwritingFont={handwritingFont}>
 	<main class:list={["post", { "has-toc": hasToc }]} id="top">
 		<article>
 			<header class="entry col">

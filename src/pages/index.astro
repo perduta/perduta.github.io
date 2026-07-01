@@ -14,7 +14,7 @@ const total = allPosts.length;
 const totalPages = getTotalPages(total);
 ---
 
-<EntryPage title="Writing — Field Notes" description={description} heading={heading} headingClass="lead" contentClass="page-end">
+<EntryPage title="Writing — Field Notes" description={description} heading={heading} headingClass="lead" contentClass="page-end" handwritingFont>
 	<PostStream posts={posts} total={total} showNewPostArrow={true} />
 	<ArchivePager currentPage={1} totalPages={totalPages} />
 </EntryPage>

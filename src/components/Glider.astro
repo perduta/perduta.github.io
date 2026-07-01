@@ -15,6 +15,7 @@
 <script>
 	const CELL = 12;     // half the 24px page background grid — twice as dense
 	const STEP_MS = 380; // resting cadence
+	const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 	// moving the mouse kicks the glider to 4x speed; once it stops, speed eases
 	// back down to 1x over BOOST_DECAY_MS.
@@ -73,6 +74,13 @@
 			live = new Set(f.seed.map(([r, c]) => (r + f.row) + ',' + (c + f.col)));
 		}
 
+		// reduced motion: park one static glider around the middle of the panel
+		function launchStatic() {
+			const r0 = Math.max(0, Math.floor(rows / 2) - 2);
+			const c0 = Math.max(0, Math.floor(cols / 2) - 2);
+			live = new Set(SEED_SE.map(([r, c]) => (r + r0) + ',' + (c + c0)));
+		}
+
 		function resize() {
 			const dpr = window.devicePixelRatio || 1;
 			const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -82,6 +90,7 @@
 			canvas.width = Math.round(w * dpr);
 			canvas.height = Math.round(h * dpr);
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+			if (reducedMotion.matches) launchStatic(); // keep the parked glider centred
 			draw();
 		}
 
@@ -127,19 +136,34 @@
 
 		new ResizeObserver(resize).observe(canvas);
 		resize();
-		launch();
 
 		// accumulator-based loop (rather than a fixed setInterval) so the step
 		// cadence can speed up smoothly with the mouse-move boost above.
-		let acc = 0, last = performance.now();
+		let raf = 0, acc = 0, last = 0;
 		function tick(now) {
 			const dt = Math.min(now - last, 200);
 			last = now;
 			acc += dt * currentSpeed();
 			while (acc >= STEP_MS) { acc -= STEP_MS; step(); }
-			requestAnimationFrame(tick);
+			raf = requestAnimationFrame(tick);
 		}
-		requestAnimationFrame(tick);
+
+		// respect prefers-reduced-motion: show a static glider instead of the
+		// simulation, and switch live if the preference changes.
+		function start() {
+			cancelAnimationFrame(raf);
+			if (reducedMotion.matches) {
+				launchStatic();
+				draw();
+				return;
+			}
+			launch();
+			acc = 0;
+			last = performance.now();
+			raf = requestAnimationFrame(tick);
+		}
+		reducedMotion.addEventListener('change', start);
+		start();
 
 		// repaint with the new accent when the theme is toggled
 		new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });

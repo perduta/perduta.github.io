@@ -156,8 +156,28 @@ const { src, alt, caption, invert } = Astro.props;
 				const img = t.closest?.('figure.fig img') as HTMLImageElement | null;
 				if (img) open(img);
 			});
-			// close on any click inside the overlay (backdrop, image, or the X)
-			overlay.addEventListener('click', () => close());
+			// close on backdrop, image, or X clicks — not on the caption
+			overlay.addEventListener('click', (e) => {
+				const t = e.target as HTMLElement;
+				if (t === overlay || t === big || closeBtn.contains(t)) close();
+			});
+			// aria-modal dialog: keep Tab cycling among the overlay's focusables
+			overlay.addEventListener('keydown', (e) => {
+				if (e.key !== 'Tab') return;
+				const focusables = overlay.querySelectorAll<HTMLElement>(
+					'button, [href], [tabindex]:not([tabindex="-1"])',
+				);
+				if (!focusables.length) return;
+				const first = focusables[0];
+				const last = focusables[focusables.length - 1];
+				if (e.shiftKey && document.activeElement === first) {
+					e.preventDefault();
+					last.focus();
+				} else if (!e.shiftKey && document.activeElement === last) {
+					e.preventDefault();
+					first.focus();
+				}
+			});
 			document.addEventListener('keydown', (e) => {
 				if (e.key === 'Escape') close();
 			});

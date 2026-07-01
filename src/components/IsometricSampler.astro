@@ -43,12 +43,19 @@ const { count = 2000, duration = 5000 } = Astro.props;
 		background: color-mix(in oklch, var(--card) 82%, transparent);
 		border: 1px solid var(--rule);
 		border-radius: 6px;
+		/* above the stream card's stretched link, so it stays clickable */
+		z-index: 5;
 		opacity: 0;
+		/* inert while invisible so it can't swallow taps; pointer-events (not
+		   visibility) keeps it in the tab order for the focus-visible reveal */
+		pointer-events: none;
 		transition: opacity .18s ease, color .18s ease, border-color .18s ease;
 	}
-	/* reveal on hover of the panel (this element fills it), or on keyboard focus */
+	/* reveal on hover of the panel or its stream card (the card's stretched link
+	   intercepts hover over the panel itself), or on keyboard focus */
 	.iso-sampler:hover .iso-sampler__replay,
-	.iso-sampler__replay:focus-visible { opacity: 1; }
+	:global(.stream-item:hover) .iso-sampler__replay,
+	.iso-sampler__replay:focus-visible { opacity: 1; pointer-events: auto; }
 	.iso-sampler__replay:hover { color: var(--ink); border-color: var(--faint); }
 </style>
 
@@ -174,7 +181,7 @@ const { count = 2000, duration = 5000 } = Astro.props;
 			resize();
 			run();
 
-			// the panel is wrapped in a post link; keep the button from navigating
+			// don't let the click bubble to the card's stretched link
 			replay.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); run(); });
 			let rt = 0;
 			window.addEventListener('resize', () => {
