@@ -16,6 +16,19 @@
 	const CELL = 12;     // half the 24px page background grid — twice as dense
 	const STEP_MS = 380; // resting cadence
 
+	// moving the mouse kicks the glider to 4x speed; once it stops, speed eases
+	// back down to 1x over BOOST_DECAY_MS.
+	const BOOST_SPEED = 4;
+	const BOOST_DECAY_MS = 100;
+	let lastMoveAt = -Infinity;
+	addEventListener('mousemove', () => { lastMoveAt = performance.now(); });
+
+	function currentSpeed() {
+		const dt = performance.now() - lastMoveAt;
+		if (dt <= 0) return BOOST_SPEED;
+		return Math.max(1, BOOST_SPEED - (BOOST_SPEED - 1) * (dt / BOOST_DECAY_MS));
+	}
+
 	// Canonical glider seed, as [row, col] in a 3x3 box. Heads down-right.
 	const SEED_SE = [[0,1],[1,2],[2,0],[2,1],[2,2]];
 	// Mirror across the vertical axis (col -> 2-col) for one heading down-left.
@@ -115,7 +128,19 @@
 		new ResizeObserver(resize).observe(canvas);
 		resize();
 		launch();
-		setInterval(step, STEP_MS);
+
+		// accumulator-based loop (rather than a fixed setInterval) so the step
+		// cadence can speed up smoothly with the mouse-move boost above.
+		let acc = 0, last = performance.now();
+		function tick(now) {
+			const dt = Math.min(now - last, 200);
+			last = now;
+			acc += dt * currentSpeed();
+			while (acc >= STEP_MS) { acc -= STEP_MS; step(); }
+			requestAnimationFrame(tick);
+		}
+		requestAnimationFrame(tick);
+
 		// repaint with the new accent when the theme is toggled
 		new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 	}
