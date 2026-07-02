@@ -150,7 +150,7 @@ const onAbout = path.startsWith('/about');
 
 				const nudge = (
 					el: HTMLElement,
-					side: 'marginTop' | 'marginBottom',
+					side: 'marginTop' | 'marginBottom' | 'paddingBottom',
 					measure: () => number | null,
 					target: number,
 					cell: number,
@@ -177,6 +177,7 @@ const onAbout = path.startsWith('/about');
 					blocks.forEach((el) => {
 						el.style.marginTop = '';
 						el.style.marginBottom = '';
+						el.style.paddingBottom = '';
 					});
 					blocks.forEach((el) => {
 						// the masthead starts the page; only its bottom boundary matters
@@ -189,9 +190,12 @@ const onAbout = path.startsWith('/about');
 						while (next && !next.getClientRects().length) next = next.nextElementSibling as HTMLElement | null;
 						if (!next) return;
 						const targetOffset = next.matches(BOXY) ? 0 : phase();
+						// the vertical accent line is two .col::before segments meeting at the
+						// header/content junction; a margin there sits outside both boxes and
+						// breaks the line, so the masthead re-phases with padding instead
 						nudge(
 							el,
-							'marginBottom',
+							el.matches('header.entry') ? 'paddingBottom' : 'marginBottom',
 							() => next.getBoundingClientRect().top + window.scrollY,
 							targetOffset,
 							cell,
