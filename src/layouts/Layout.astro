@@ -183,7 +183,10 @@ const onAbout = path.startsWith('/about');
 						if (!el.matches('header.entry')) {
 							nudge(el, 'marginTop', () => el.getBoundingClientRect().top + window.scrollY, 0, cell);
 						}
-						const next = el.nextElementSibling as HTMLElement | null;
+						// skip siblings that don't render (Astro emits display:none script
+						// tags into the flow — their rect sits at 0,0 and poisons the math)
+						let next = el.nextElementSibling as HTMLElement | null;
+						while (next && !next.getClientRects().length) next = next.nextElementSibling as HTMLElement | null;
 						if (!next) return;
 						const targetOffset = next.matches(BOXY) ? 0 : phase();
 						nudge(
